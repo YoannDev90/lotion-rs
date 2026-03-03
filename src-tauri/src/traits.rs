@@ -35,4 +35,8 @@ pub trait ThemingEngine: Send + Sync {
     fn get_custom_css(&self) -> String;
     /// Injects the current theme into a webview
     fn inject_theme(&self, webview: &tauri::Webview, theme_name: &str);
+    /// Set the active theme at runtime
+    fn set_active_theme(&self, name: &str);
+    /// Get the currently active theme name
+    fn get_active_theme(&self) -> String;
 }

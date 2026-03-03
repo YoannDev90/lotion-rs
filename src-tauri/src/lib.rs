@@ -8,3 +8,4 @@ pub mod ui;
 pub mod policy;
 pub mod menu;
 pub mod state;
+pub mod config;

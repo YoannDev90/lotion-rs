@@ -33,6 +33,8 @@ pub enum Message {
     Maximize,
     CloseWindow,
     TauriReady(tauri::AppHandle),
+    ThemeChanged(String),
+    TabTitleUpdated(String, String), // (tab_id, new_title)
 }
 
 pub struct Flags {
@@ -118,6 +120,19 @@ impl iced::Application for LotionApp {
             }
             Message::CloseWindow => {
                 log::info!("UI: Close window");
+            }
+            Message::ThemeChanged(theme_name) => {
+                log::info!("UI: Theme changed to: {}", theme_name);
+                // TODO: Re-inject CSS into all active webviews
+            }
+            Message::TabTitleUpdated(tab_id, new_title) => {
+                for tab in &mut self.tabs {
+                    if tab.id == tab_id {
+                        tab.title = new_title.clone();
+                        log::info!("UI: Tab {} title updated to: {}", tab_id, new_title);
+                        break;
+                    }
+                }
             }
         }
         iced::Command::none()

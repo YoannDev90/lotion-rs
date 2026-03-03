@@ -56,9 +56,32 @@ impl TabController {
 
         log::info!("Created tab webview: {} in window: {}", tab_id, window_id);
 
-        // Phase 3: Inject Theme
+        // Inject theme from config (not hardcoded)
         let theming = app.state::<Arc<dyn ThemingEngine>>();
-        theming.inject_theme(&webview, "dracula"); // TODO: Load from config
+        let active_theme = theming.get_active_theme();
+        theming.inject_theme(&webview, &active_theme);
+
+        // Inject title observer — watches for document.title changes and logs them
+        // In a full implementation, this would send IPC messages back to the Rust side
+        let title_observer_js = format!(r#"
+            (function() {{
+                const tabId = '{}';
+                let lastTitle = document.title;
+                const observer = new MutationObserver(function() {{
+                    if (document.title !== lastTitle) {{
+                        lastTitle = document.title;
+                        console.log('[lotion-title-sync] tab=' + tabId + ' title=' + lastTitle);
+                        // In production, this would use window.__TAURI__.invoke()
+                    }}
+                }});
+                observer.observe(document.querySelector('title') || document.head, {{
+                    subtree: true,
+                    characterData: true,
+                    childList: true
+                }});
+            }})();
+        "#, tab_id);
+        let _ = webview.eval(&title_observer_js);
 
         Ok(Self {
             tab_id,

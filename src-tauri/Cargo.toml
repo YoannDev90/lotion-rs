@@ -19,3 +19,5 @@ tokio = { version = "1.0", features = ["full"] }
 tokio-stream = "0.1"
 url = "2.5"
 opener = "0.7"
+toml = "0.8"
+dirs = "5.0"
