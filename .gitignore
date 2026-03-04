@@ -24,3 +24,4 @@ src-tauri/bin/
 src-tauri/gen/
 src-tauri/lib/
 src-tauri/target/
+tmp/

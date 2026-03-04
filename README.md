@@ -238,6 +238,24 @@ See [`.github/workflows/build-and-release.yml`](.github/workflows/build-and-rele
 - **[sysdrum/notion-app](https://github.com/sysdrum/notion-app)** — Early inspiration referenced in the original Lotion project.
 - **[SecByDesign Collective](https://github.com/SecByDesignCollective/Manifesto)** — The Zero-Trust Engineering Manifesto, which defines the security philosophy this project is built on.
 - **[Tauri v2](https://v2.tauri.app/)** — The framework that makes a lightweight, cross-platform, Rust-native desktop app possible.
+- **[Microsoft LiteBox](https://github.com/microsoft/LiteBox)** — The sandboxing technology used to isolate the Notion WebView, providing the Zero-Trust process containment layer at the core of Lotion-rs's security model.
+
+---
+
+## Support the Project
+
+### 💼 Open to Work
+
+I'm currently **looking for a job** — open to roles in systems programming, security engineering, Rust development, or Linux desktop tooling. If you're hiring or know of an opportunity, feel free to reach out via a GitHub issue or discussion.
+
+### ☕ Donations
+
+If this project saves you time or you just want to support its continued development, donations are welcome and very much appreciated.
+
+**Ethereum (ETH / ERC-20):**
+```
+0xe7254b9a20a95658167a84120a84dce9326ef3ac
+```
 
 ---
 
