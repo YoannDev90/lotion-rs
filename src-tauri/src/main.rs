@@ -32,17 +32,14 @@ fn main() -> iced::Result {
     std::env::set_var("WEBKIT_DISABLE_ACCESSIBILITY", "1");
     std::env::set_var("GTK_A11Y", "none");
     std::env::set_var("GIO_USE_VFS", "local");
-    std::env::set_var("WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS", "1");
+    // std::env::set_var("WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS", "1"); // REMOVED: Re-enabling sandbox for security
 
     // Set RUST_LOG only if not already set by the user
     if std::env::var("RUST_LOG").is_err() {
-        std::env::set_var(
-            "RUST_LOG",
-            "info,lotion_rs=trace,tauri=debug,wry=debug,wgpu=warn,iced=debug",
-        );
+        std::env::set_var("RUST_LOG", "info");
     }
     env_logger::init();
-    log::info!("Starting Lotion-rs with Verbose Logging...");
+    log::info!("Starting Lotion-rs...");
 
     // Load user config
     let config = LotionConfig::load();
