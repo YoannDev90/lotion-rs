@@ -2,7 +2,6 @@ use tauri::{AppHandle, Manager, WebviewUrl, Url, WebviewBuilder};
 use tauri::webview::Webview;
 use std::sync::Arc;
 use crate::litebox::LiteBox;
-use crate::litebox::host::HostPlatform;
 use crate::traits::{PolicyEnforcer, ThemingEngine};
 
 pub struct TabController {
@@ -17,7 +16,7 @@ impl TabController {
         window_id: &str,
         tab_id: String,
         url_str: &str,
-        _litebox: Arc<LiteBox<HostPlatform>>,
+        _litebox: Arc<LiteBox>,
     ) -> tauri::Result<Self> {
         let policy = app.state::<Arc<dyn PolicyEnforcer>>().inner().clone();
         
@@ -35,65 +34,97 @@ impl TabController {
         // Create a new webview for this tab
         let mut webview_builder = WebviewBuilder::new(&tab_id, WebviewUrl::External(url.clone()));
         
-        // Zero-Trust: Intercept all navigation requests
-        let policy_cloned = policy.clone();
-        let app_handle = app.clone();
+        let nav_app = app.clone();
+        let nav_policy = policy.clone();
+        let popup_app = app.clone();
+        let popup_policy = policy.clone();
+
+        let window_id_clone = window_id.to_string();
         webview_builder = webview_builder
-            .on_navigation({
-                let app_handle = app_handle.clone();
-                move |url| {
-                    let url_str = url.as_str();
-                    if policy_cloned.validate_url(url_str) {
-                        true // Allow internal navigation to Notion
-                    } else if policy_cloned.validate_external_link(url_str) {
-                        log::info!("Zero-Trust: Opening validated external link in default browser: {}", url_str);
-                        use tauri_plugin_shell::ShellExt;
-                        #[allow(deprecated)]
-                        let _ = app_handle.shell().open(url_str.to_string(), None);
-                        false // Block navigation in the webview
-                    } else {
-                        log::warn!("Zero-Trust: BLOCKED unauthorized navigation attempt to: {}", url_str);
-                        false // Block everything else
+            .on_navigation(move |url| {
+                let window_id = &window_id_clone;
+                let url_str = url.as_str();
+
+                // Intercept custom window control actions
+                if url_str.starts_with("lotion-action://") {
+                    let action = url_str.strip_prefix("lotion-action://").unwrap_or("");
+                    log::info!("Intercepted Lotion action: {}", action);
+                    
+                    if let Some(w) = nav_app.get_window(window_id) {
+                        match action {
+                            "window:close" => {
+                                let _ = w.close();
+                            }
+                            "window:minimize" => {
+                                let _ = w.minimize();
+                            }
+                            "window:maximize" => {
+                                if let Ok(true) = w.is_maximized() {
+                                    let _ = w.unmaximize();
+                                } else {
+                                    let _ = w.maximize();
+                                }
+                            }
+                            "tab:new" => {
+                                let notion_url = "https://www.notion.so";
+                                if let Some(orchestrator) = nav_app.try_state::<Arc<dyn crate::traits::TabOrchestrator>>() {
+                                    if let Ok(new_id) = orchestrator.inner().create_tab(&nav_app, window_id, notion_url) {
+                                        let _ = orchestrator.inner().show_tab(&new_id);
+                                        
+                                        // Update AppState
+                                        if let Some(state_lock) = nav_app.try_state::<Arc<tokio::sync::Mutex<crate::state::AppState>>>() {
+                                            let mut app_state = state_lock.blocking_lock();
+                                            if let Some(w_state) = app_state.windows.get_mut(window_id) {
+                                                w_state.tab_ids.push(new_id);
+                                                let _ = app_state.save_to_disk();
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            _ => {
+                                log::warn!("Unknown Lotion action: {}", action);
+                            }
+                        }
                     }
+                    return false; // Prevent actual navigation
+                }
+
+                if nav_policy.validate_url(url_str) {
+                    true // Allow internal navigation to Notion
+                } else if nav_policy.validate_external_link(url_str) {
+                    log::info!("Zero-Trust: Opening validated external link in default browser: {}", url_str);
+                    use tauri_plugin_shell::ShellExt;
+                    #[allow(deprecated)]
+                    let _ = nav_app.shell().open(url_str.to_string(), None);
+                    false // Block navigation in the webview
+                } else {
+                    log::warn!("Zero-Trust: BLOCKED unauthorized navigation attempt to: {}", url_str);
+                    false // Block everything else
                 }
             })
-            .on_new_window({
-                let app_handle = app_handle.clone();
-                let policy_cloned = policy.clone();
-                move |url, _| {
-                    use tauri_plugin_shell::ShellExt;
-                    let url_str = url.as_str();
+            .on_new_window(move |url, _| {
+                use tauri_plugin_shell::ShellExt;
+                let url_str = url.as_str();
 
-                    if policy_cloned.should_route_popup_to_system_browser(url_str) {
-                        log::info!("Routing new window request (popup) to system browser: {}", url_str);
-                        #[allow(deprecated)]
-                        let _ = app_handle.shell().open(url_str.to_string(), None);
-                        tauri::webview::NewWindowResponse::Deny
-                    } else {
-                        // Manually create a controlled window for OAuth/Notion popups
-                        // This ensures they are resizable, decorated, and handle window.close() correctly
-                        let label = format!("popup-{}", uuid::Uuid::new_v4());
-                        log::info!("Creating controlled in-app popup for: {}", url_str);
-                        
-                        let _ = tauri::WebviewWindowBuilder::new(&app_handle, label, tauri::WebviewUrl::External(url.clone()))
-                            .title("Lotion Login")
-                            .inner_size(800.0, 600.0)
-                            .resizable(true)
-                            .decorations(true)
-                            .always_on_top(true)
-                            .build();
-                            
-                        tauri::webview::NewWindowResponse::Deny
-                    }
+                if popup_policy.should_route_popup_to_system_browser(url_str) {
+                    log::info!("Routing new window request (popup) to system browser: {}", url_str);
+                    #[allow(deprecated)]
+                    let _ = popup_app.shell().open(url_str.to_string(), None);
+                    tauri::webview::NewWindowResponse::Deny
+                } else {
+                    // Spawn a controlled popup using the recursive secure factory
+                    spawn_secure_popup(&popup_app, popup_policy.clone(), url.clone());
+                    tauri::webview::NewWindowResponse::Deny
                 }
             });
 
         let webview = window.add_child(
             webview_builder,
-            tauri::LogicalPosition::new(0.0, 32.0),
+            tauri::LogicalPosition::new(0.0, 0.0),
             tauri::LogicalSize::new(
                 window.inner_size().unwrap().width as f64, 
-                (window.inner_size().unwrap().height as f64) - 32.0
+                window.inner_size().unwrap().height as f64
             )
         )?;
 
@@ -104,22 +135,128 @@ impl TabController {
         let active_theme = theming.get_active_theme();
         theming.inject_theme(&webview, &active_theme);
 
-        // Inject title observer — watches for document.title changes and logs them
+        // Inject title observer and custom Mac-style Window Controls
         let title_observer_js = format!(r#"
             (function() {{
                 const tabId = '{}';
+                
+                // 1. Title Observer
                 let lastTitle = document.title;
                 const observer = new MutationObserver(function() {{
                     if (document.title !== lastTitle) {{
                         lastTitle = document.title;
-                        console.log('[lotion-title-sync] tab=' + tabId + ' title=' + lastTitle);
-                        window.__TAURI__.invoke('update_tab_title', {{ tabId: tabId, title: lastTitle }});
+                        if (window.__TAURI__) {{
+                            window.__TAURI__.invoke('update_tab_state', {{ 
+                                tabId: tabId, 
+                                title: lastTitle,
+                                url: window.location.href
+                            }});
+                        }}
                     }}
                 }});
                 observer.observe(document.querySelector('title') || document.head, {{
-                    subtree: true,
-                    characterData: true,
-                    childList: true
+                    subtree: true, characterData: true, childList: true
+                }});
+
+                // 2. Inject Native-feeling Window Controls (Titlebar)
+                window.addEventListener('DOMContentLoaded', () => {{
+                    const titlebar = document.createElement('div');
+                    titlebar.id = 'lotion-custom-titlebar';
+                    titlebar.setAttribute('data-tauri-drag-region', '');
+                    titlebar.style.cssText = `
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 38px;
+                        z-index: 999999;
+                        display: flex;
+                        align-items: center;
+                        padding-left: 12px;
+                        pointer-events: none; /* Let clicks pass through the drag region */
+                    `;
+
+                    // Push the Notion sidebar down slightly so it doesn't overlap the buttons
+                    const style = document.createElement('style');
+                    style.textContent = `
+                        .notion-sidebar-container {{ margin-top: 38px !important; }}
+                        .notion-topbar {{ padding-left: 80px !important; }}
+                    `;
+                    document.head.appendChild(style);
+
+                    // Create the Mac-style buttons container
+                    const btnContainer = document.createElement('div');
+                    btnContainer.style.cssText = `
+                        display: flex;
+                        gap: 8px;
+                        pointer-events: auto; /* Buttons must be clickable */
+                    `;
+
+                    const createBtn = (color, clickHandler, label = "") => {{
+                        const btn = document.createElement('div');
+                        btn.style.cssText = `
+                            width: 12px; height: 12px;
+                            border-radius: 50%;
+                            background-color: ${{color}};
+                            cursor: pointer;
+                            border: 1px solid rgba(0,0,0,0.1);
+                            display: flex; align-items: center; justify-content: center;
+                            font-size: 8px; font-family: sans-serif;
+                        `;
+                        if (label) btn.innerText = label;
+                        btn.addEventListener('click', clickHandler);
+                        return btn;
+                    }};
+
+                    const closeBtn = createBtn('#ff5f56', () => {{
+                        window.location.href = 'lotion-action://window:close';
+                    }});
+                    
+                    const minBtn = createBtn('#ffbd2e', () => {{
+                        window.location.href = 'lotion-action://window:minimize';
+                    }});
+                    
+                    const maxBtn = createBtn('#27c93f', () => {{
+                        window.location.href = 'lotion-action://window:maximize';
+                    }});
+
+                    const navBackBtn = createBtn('#e0e0e0', () => {{
+                        window.history.back();
+                    }}, '‹');
+                    
+                    const navForwardBtn = createBtn('#e0e0e0', () => {{
+                        window.history.forward();
+                    }}, '›');
+                    
+                    const refreshBtn = createBtn('#e0e0e0', () => {{
+                        window.location.reload();
+                    }}, '↻');
+
+                    const newTabBtn = createBtn('#27c93f', () => {{
+                        window.location.href = 'lotion-action://tab:new';
+                    }}, '+');
+
+                    btnContainer.appendChild(closeBtn);
+                    btnContainer.appendChild(minBtn);
+                    btnContainer.appendChild(maxBtn);
+                    
+                    // Spacer
+                    const spacer = document.createElement('div');
+                    spacer.style.width = '24px';
+                    btnContainer.appendChild(spacer);
+                    
+                    btnContainer.appendChild(navBackBtn);
+                    btnContainer.appendChild(navForwardBtn);
+                    btnContainer.appendChild(refreshBtn);
+                    
+                    // Another spacer
+                    const spacer2 = document.createElement('div');
+                    spacer2.style.width = '24px';
+                    btnContainer.appendChild(spacer2);
+                    
+                    btnContainer.appendChild(newTabBtn);
+                    titlebar.appendChild(btnContainer);
+                    document.body.appendChild(titlebar);
                 }});
             }})();
         "#, tab_id);
@@ -198,9 +335,29 @@ impl TabController {
         Ok(())
     }
 
-    pub fn destroy(self) -> tauri::Result<()> {
+    pub fn destroy(&self) -> tauri::Result<()> {
         log::info!("Destroying tab: {}", self.tab_id);
         self.webview.close()?;
         Ok(())
+    }
+}
+
+/// Routes secure popup requests into the application's internal TabManager.
+/// Guaranteeing that any nested popups (e.g. nested OAuth flows) inherit 
+/// the exact same zero-trust `on_navigation` and `on_new_window` policies 
+/// as their parent window via the TabController factory.
+pub fn spawn_secure_popup(app: &AppHandle, _policy: Arc<dyn PolicyEnforcer>, url: Url) {
+    log::info!("Intercepted popup request. Routing into a secure in-app tab: {}", url.as_str());
+    
+    // Instead of spawning a completely disconnected OS window, dispatch the popup 
+    // into our managed TabOrchestrator. This keeps the application bounded strictly
+    // to a single window and enforces all Zero-Trust policies recursively since 
+    // create_tab() uses the TabController factory.
+    if let Some(orchestrator) = app.try_state::<Arc<dyn crate::traits::TabOrchestrator>>() {
+        if let Err(e) = orchestrator.inner().create_tab(app, "main", url.as_str()) {
+            log::error!("Zero-Trust: Failed to route popup into managed tab: {}", e);
+        }
+    } else {
+        log::error!("Zero-Trust: Cannot spawn tab securely. TabOrchestrator missing from state.");
     }
 }

@@ -1,0 +1,316 @@
+nohup: ignoring input
+   Compiling lotion-rs v0.2.0 (/home/akakaa/research/lotion-rs/src-tauri)
+warning: unused import: `std::sync::Arc`
+  --> src/litebox/mod.rs:10:5
+   |
+10 | use std::sync::Arc;
+   |     ^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `crate::traits::SecuritySandbox`
+ --> src/security.rs:3:5
+  |
+3 | use crate::traits::SecuritySandbox;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `lotion-rs` (lib) generated 2 warnings (run `cargo fix --lib -p lotion-rs` to apply 2 suggestions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 27.65s
+     Running `target/debug/lotion-rs`
+[2026-03-04T19:21:51Z INFO  lotion_rs] Starting Lotion-rs...
+[2026-03-04T19:21:51Z INFO  lotion_rs::config] Config loaded from /home/akakaa/.config/lotion/config.toml
+[2026-03-04T19:21:51Z INFO  lotion_rs] Config: theme=dracula, restore_tabs=true
+[2026-03-04T19:21:51Z INFO  lotion_rs::litebox] LiteBox: Applying Linux generic namespace/seccomp boundaries
+[2026-03-04T19:21:51Z INFO  lotion_rs::litebox::linux] Applying Linux filesystem/capability restrictions
+[2026-03-04T19:21:51Z INFO  winit::platform_impl::platform::x11::window] Guessed window scale factor: 1
+[2026-03-04T19:21:52Z INFO  lotion_rs::spellcheck] Hunspell dictionaries loaded successfully.
+[2026-03-04T19:21:52Z INFO  lotion_rs] Tauri background layer initialized.
+[2026-03-04T19:21:52Z WARN  wgpu_hal::vulkan::instance] InstanceFlags::VALIDATION requested, but unable to find layer: VK_LAYER_KHRONOS_validation
+[2026-03-04T19:21:52Z INFO  wgpu_hal::vulkan::instance] Debug utils not enabled: debug_utils_user_data not passed to Instance::from_raw
+[2026-03-04T19:21:52Z INFO  wgpu_hal::gles::egl] Using X11 platform
+[2026-03-04T19:21:53Z WARN  wgpu_hal::gles::egl] No config found!
+[2026-03-04T19:21:53Z WARN  wgpu_hal::gles::egl] EGL says it can present to the window but not natively
+[2026-03-04T19:21:53Z INFO  iced_wgpu::window::compositor] Settings {
+        present_mode: AutoVsync,
+        internal_backend: Backends(
+            VULKAN | GL | METAL | DX12 | BROWSER_WEBGPU,
+        ),
+        default_font: Font {
+            family: SansSerif,
+            weight: Normal,
+            stretch: Normal,
+            style: Normal,
+        },
+        default_text_size: Pixels(
+            16.0,
+        ),
+        antialiasing: None,
+    }
+[2026-03-04T19:21:53Z INFO  wgpu_core::instance] Adapter Vulkan AdapterInfo { name: "NVIDIA GeForce RTX 4060 Laptop GPU", vendor: 4318, device: 10464, device_type: DiscreteGpu, driver: "NVIDIA", driver_info: "550.163.01", backend: Vulkan }
+[2026-03-04T19:21:53Z INFO  wgpu_core::instance] Adapter Vulkan AdapterInfo { name: "Intel(R) Graphics (RPL-S)", vendor: 32902, device: 42888, device_type: IntegratedGpu, driver: "Intel open-source Mesa driver", driver_info: "Mesa 25.0.7-2", backend: Vulkan }
+[2026-03-04T19:21:53Z INFO  wgpu_core::instance] Adapter Vulkan AdapterInfo { name: "llvmpipe (LLVM 19.1.7, 256 bits)", vendor: 65541, device: 0, device_type: Cpu, driver: "llvmpipe", driver_info: "Mesa 25.0.7-2 (LLVM 19.1.7)", backend: Vulkan }
+[2026-03-04T19:21:53Z INFO  wgpu_core::instance] Adapter Gl AdapterInfo { name: "NVIDIA GeForce RTX 4060 Laptop GPU/PCIe/SSE2", vendor: 4318, device: 0, device_type: Other, driver: "", driver_info: "", backend: Gl }
+[2026-03-04T19:21:53Z INFO  iced_wgpu::window::compositor] Available adapters: [
+        AdapterInfo {
+            name: "NVIDIA GeForce RTX 4060 Laptop GPU",
+            vendor: 4318,
+            device: 10464,
+            device_type: DiscreteGpu,
+            driver: "NVIDIA",
+            driver_info: "550.163.01",
+            backend: Vulkan,
+        },
+        AdapterInfo {
+            name: "Intel(R) Graphics (RPL-S)",
+            vendor: 32902,
+            device: 42888,
+            device_type: IntegratedGpu,
+            driver: "Intel open-source Mesa driver",
+            driver_info: "Mesa 25.0.7-2",
+            backend: Vulkan,
+        },
+        AdapterInfo {
+            name: "llvmpipe (LLVM 19.1.7, 256 bits)",
+            vendor: 65541,
+            device: 0,
+            device_type: Cpu,
+            driver: "llvmpipe",
+            driver_info: "Mesa 25.0.7-2 (LLVM 19.1.7)",
+            backend: Vulkan,
+        },
+        AdapterInfo {
+            name: "NVIDIA GeForce RTX 4060 Laptop GPU/PCIe/SSE2",
+            vendor: 4318,
+            device: 0,
+            device_type: Other,
+            driver: "",
+            driver_info: "",
+            backend: Gl,
+        },
+    ]
+[2026-03-04T19:21:53Z INFO  wgpu_core::instance] Adapter Vulkan AdapterInfo { name: "Intel(R) Graphics (RPL-S)", vendor: 32902, device: 42888, device_type: IntegratedGpu, driver: "Intel open-source Mesa driver", driver_info: "Mesa 25.0.7-2", backend: Vulkan }
+[2026-03-04T19:21:53Z INFO  iced_wgpu::window::compositor] Selected: AdapterInfo {
+        name: "Intel(R) Graphics (RPL-S)",
+        vendor: 32902,
+        device: 42888,
+        device_type: IntegratedGpu,
+        driver: "Intel open-source Mesa driver",
+        driver_info: "Mesa 25.0.7-2",
+        backend: Vulkan,
+    }
+[2026-03-04T19:21:53Z INFO  iced_wgpu::window::compositor] Available formats: Copied {
+        it: Iter(
+            [
+                Bgra8UnormSrgb,
+                Bgra8Unorm,
+            ],
+        ),
+    }
+[2026-03-04T19:21:53Z INFO  iced_wgpu::window::compositor] Available alpha modes: [
+        Opaque,
+        Inherit,
+    ]
+[2026-03-04T19:21:53Z INFO  iced_wgpu::window::compositor] Selected format: Bgra8UnormSrgb with alpha mode: Auto
+[2026-03-04T19:21:55Z INFO  cosmic_text::font::system] Parsed 2701 font faces in 1611ms.
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] Tauri is ready, handle received.
+[2026-03-04T19:21:55Z INFO  lotion_rs::window_controller] WindowController: Creating initial tab for Notion: https://www.notion.so
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:55Z INFO  lotion_rs::tab_controller] Created tab webview: 4f05e2ee-c1cc-4021-a3e0-f1f5c7543fde in window: main
+[2026-03-04T19:21:55Z INFO  lotion_rs::tab_manager] TabManager: Created tab 4f05e2ee-c1cc-4021-a3e0-f1f5c7543fde
+[2026-03-04T19:21:55Z INFO  lotion_rs::ui] WindowController initialized and set up.
+[2026-03-04T19:21:59Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:21:59Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:00Z WARN  lotion_rs::policy] PolicyManager: BLOCKED malformed or unsupported URL: about:blank
+[2026-03-04T19:22:00Z WARN  lotion_rs::policy] PolicyManager: BLOCKED unsafe external link protocol: about
+[2026-03-04T19:22:00Z WARN  lotion_rs::tab_controller] Zero-Trust: BLOCKED unauthorized navigation attempt to: about:blank
+[2026-03-04T19:22:00Z WARN  lotion_rs::policy] PolicyManager: BLOCKED malformed or unsupported URL: about:blank
+[2026-03-04T19:22:00Z WARN  lotion_rs::policy] PolicyManager: BLOCKED unsafe external link protocol: about
+[2026-03-04T19:22:00Z WARN  lotion_rs::tab_controller] Zero-Trust: BLOCKED unauthorized navigation attempt to: about:blank
+[2026-03-04T19:22:01Z WARN  lotion_rs::policy] PolicyManager: BLOCKED malformed or unsupported URL: about:blank
+[2026-03-04T19:22:01Z WARN  lotion_rs::policy] PolicyManager: BLOCKED unsafe external link protocol: about
+[2026-03-04T19:22:01Z WARN  lotion_rs::tab_controller] Zero-Trust: BLOCKED unauthorized navigation attempt to: about:blank
+[2026-03-04T19:22:01Z WARN  lotion_rs::policy] PolicyManager: BLOCKED unauthorized endpoint: www.googletagmanager.com
+[2026-03-04T19:22:01Z INFO  lotion_rs::tab_controller] Zero-Trust: Opening validated external link in default browser: https://www.googletagmanager.com/static/service_worker/6240/sw_iframe.html?origin=https%3A%2F%2Faif.notion.so
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:18Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:19Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:19Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:19Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:19Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:19Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:19Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:19Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:19Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:19Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:19Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:19Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:19Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:19Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:19Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:19Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:19Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:19Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:19Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:19Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:19Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:19Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:19Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:19Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:19Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:19Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:19Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:20Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:20Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:20Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:20Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:20Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:20Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:20Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:20Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:20Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:20Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:20Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:20Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:20Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:20Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:20Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:20Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:20Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:20Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:20Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:20Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:20Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:20Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:20Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:20Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:20Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:20Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:20Z INFO  lotion_rs::ui] UI: Refresh
+[2026-03-04T19:22:20Z INFO  lotion_rs::ui] UI: Refresh

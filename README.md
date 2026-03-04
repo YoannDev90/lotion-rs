@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="70%" height="70%" src="./src-tauri/assets/Banner.png" alt="Lotion — Native Rust Desktop App for Notion.so">
+  <img width="35%" height="35%" src="./docs/images/Banner.png" alt="Lotion — Native Rust Desktop App for Notion.so">
 </p>
 
 <p align="center">
@@ -17,7 +17,7 @@
 
 **Notion does not have a native Linux desktop client.** That gap is why the original [Lotion](https://github.com/puneetsl/lotion) Electron application was created by [Puneet Singh Ludu](https://github.com/puneetsl) — to give Linux users a proper, integrated Notion experience without resorting to the browser.
 
-**Lotion-rs** is a complete port of that concept into Rust. It replaces the Electron/Node.js stack with [Tauri v2](https://v2.tauri.app/) for OS integration and a native Iced UI, eliminating the heavy runtime overhead of a Chromium-based shell while adding a hardened, Zero-Trust security model aligned with the [SecByDesign Collective Manifesto](https://github.com/SecByDesignCollective/Manifesto).
+**Lotion-rs** is a complete port of that concept into Rust. It replaces the Electron/Node.js stack with [Tauri v2](https://v2.tauri.app/) for OS integration and a native injected UI, eliminating the heavy runtime overhead of a Chromium-based shell while adding a hardened, Zero-Trust security model aligned with the [SecByDesign Collective Manifesto](https://github.com/SecByDesignCollective/Manifesto).
 
 The result is a fast, memory-efficient, privacy-respecting Notion client that runs natively on Linux — and nowhere compromises on security.
 
@@ -39,7 +39,7 @@ Lotion-rs keeps everything that made Lotion great and rebuilds the foundation in
 |---|---|---|
 | **Language** | TypeScript / JavaScript | Rust |
 | **Runtime** | Electron + Node.js | Tauri v2 (native) |
-| **UI** | Chromium renderer | System WebView + Iced native UI chrome |
+| **UI** | Chromium renderer | System WebView + Injected native UI chrome |
 | **Memory** | ~200–400 MB | ~60–100 MB |
 | **Security** | Standard Electron sandbox | Zero-Trust + LiteBox sandboxing |
 | **Config** | JSON | TOML (`~/.config/lotion/config.toml`) |
@@ -69,7 +69,7 @@ What that means in practice for Lotion-rs:
 ### Core
 - **Full Notion.so Access** — Complete feature parity with the Notion web app, running natively on Linux.
 - **Multi-Tab Interface** — Open multiple Notion pages simultaneously, with tab persistence across restarts (`restore_tabs = true` in config).
-- **Native Window Controls** — Custom frameless window with an integrated Iced-rendered title bar, tab bar, and navigation controls.
+- **Native Window Controls** — Custom frameless window with a Mac-style injected title bar, tab bar, and navigation controls.
 - **System Tray Integration** — Minimise to tray and restore from tray without losing your session.
 
 ### Security
@@ -211,7 +211,9 @@ lotion-rs/
 │   │   ├── config.rs         # TOML config load/save
 │   │   ├── window_controller.rs  # Window state management
 │   │   ├── tab_controller.rs     # Multi-tab logic
-│   │   └── ui/               # Iced native UI (title bar, tabs)
+│   │   ├── tab_manager.rs    # Tab orchestration
+│   │   ├── policy.rs         # Zero-Trust policy enforcement
+│   │   └── theming.rs        # Native CSS/JS theming engine
 │   ├── assets/          # Icons, banner, CSS themes
 │   ├── i18n/            # Internationalisation strings
 │   └── tauri.conf.json  # Tauri v2 configuration

@@ -8,6 +8,12 @@ pub struct ThemeManager {
     custom_css_path: RwLock<Option<PathBuf>>,
 }
 
+impl Default for ThemeManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ThemeManager {
     pub fn new() -> Self {
         Self {

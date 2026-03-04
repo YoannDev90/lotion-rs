@@ -9,6 +9,12 @@ pub struct I18nManager {
     locale: Mutex<String>,
 }
 
+impl Default for I18nManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl I18nManager {
     pub fn new() -> Self {
         Self {
@@ -18,6 +24,19 @@ impl I18nManager {
     }
 
     pub fn load_locale(&self, app: &AppHandle, locale: &str) {
+        // Strict sanitization: restrict to ASCII alphanumeric, hyphens, and underscores.
+        // Explicitly reject any path separators, parent directory references, or excessive lengths.
+        if locale.is_empty() 
+            || locale.len() > 16 
+            || locale.contains("..")
+            || locale.contains('/')
+            || locale.contains('\\')
+            || !locale.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_') 
+        {
+            log::warn!("I18nManager: BLOCKED attempt to load invalid locale string: '{}'", locale);
+            return;
+        }
+
         *self.locale.lock().unwrap() = locale.to_string();
         
         // Resolve path to bundled i18n JSON

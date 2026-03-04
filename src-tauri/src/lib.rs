@@ -4,7 +4,8 @@ pub mod tab_controller;
 pub mod tab_manager;
 pub mod traits;
 pub mod security;
-pub mod ui;
+pub mod theming;
+
 pub mod policy;
 pub mod menu;
 pub mod state;

@@ -1,9 +1,8 @@
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
 use tauri::{AppHandle, Manager};
 use crate::tab_controller::TabController;
 use crate::litebox::LiteBox;
-use crate::litebox::host::HostPlatform;
 use crate::traits::TabOrchestrator;
 
 impl TabOrchestrator for TabManager {
@@ -15,14 +14,24 @@ impl TabOrchestrator for TabManager {
         self.destroy_tab(tab_id)
     }
 
+    fn show_tab(&self, tab_id: &str) -> tauri::Result<()> {
+        let tabs = self.tabs.read().unwrap();
+        for (id, tab) in tabs.iter() {
+            if id == tab_id {
+                tab.show()?;
+            } else {
+                tab.hide()?;
+            }
+        }
+        Ok(())
+    }
+
     fn get_tab_ids(&self) -> Vec<String> {
-        let tabs = self.tabs.lock().unwrap();
-        tabs.keys().cloned().collect()
+        self.tabs.read().unwrap().keys().cloned().collect()
     }
 
     fn inject_theme_into_tab(&self, app: &AppHandle, tab_id: &str, theme_name: &str) -> tauri::Result<()> {
-        let tabs = self.tabs.lock().unwrap();
-        if let Some(tab) = tabs.get(tab_id) {
+        if let Some(tab) = self.tabs.read().unwrap().get(tab_id) {
             let theming = app.state::<Arc<dyn crate::traits::ThemingEngine>>();
             theming.inject_theme(&tab.webview, theme_name);
         }
@@ -31,14 +40,14 @@ impl TabOrchestrator for TabManager {
 }
 
 pub struct TabManager {
-    pub tabs: Mutex<HashMap<String, TabController>>,
-    pub litebox: Arc<LiteBox<HostPlatform>>,
+    pub tabs: RwLock<HashMap<String, Arc<TabController>>>,
+    pub litebox: Arc<LiteBox>,
 }
 
 impl TabManager {
-    pub fn new(litebox: Arc<LiteBox<HostPlatform>>) -> Self {
+    pub fn new(litebox: Arc<LiteBox>) -> Self {
         Self {
-            tabs: Mutex::new(HashMap::new()),
+            tabs: RwLock::new(HashMap::new()),
             litebox,
         }
     }
@@ -59,21 +68,18 @@ impl TabManager {
             self.litebox.clone(),
         )?;
 
-        let mut tabs = self.tabs.lock().unwrap();
-        tabs.insert(tab_id.clone(), tab_controller);
+        self.tabs.write().unwrap().insert(tab_id.clone(), Arc::new(tab_controller));
 
         log::info!("TabManager: Created tab {}", tab_id);
         Ok(tab_id)
     }
 
     pub fn get_tab(&self, tab_id: &str) -> Option<String> {
-        let tabs = self.tabs.lock().unwrap();
-        tabs.get(tab_id).map(|t| t.tab_id.clone())
+        self.tabs.read().unwrap().get(tab_id).map(|t| t.tab_id.clone())
     }
 
     pub fn destroy_tab(&self, tab_id: &str) -> tauri::Result<()> {
-        let mut tabs = self.tabs.lock().unwrap();
-        if let Some(tab) = tabs.remove(tab_id) {
+        if let Some(tab) = self.tabs.write().unwrap().remove(tab_id) {
             tab.destroy()?;
         }
         Ok(())

@@ -4,6 +4,12 @@ pub struct PolicyManager {
     allowed_domains: Vec<String>,
 }
 
+impl Default for PolicyManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PolicyManager {
     pub fn new() -> Self {
         Self {
@@ -21,7 +27,7 @@ impl PolicyManager {
     fn is_official_notion(&self, host: &str) -> bool {
         self.allowed_domains
             .iter()
-            .any(|domain| host.ends_with(domain))
+            .any(|domain| host == domain || host.ends_with(&format!(".{}", domain)))
     }
 }
 
@@ -37,7 +43,8 @@ impl PolicyEnforcer for PolicyManager {
                 }
 
                 // Allow Google and Apple login navigation during OAuth flow
-                if host.contains("accounts.google.com") || host.contains("appleid.apple.com") {
+                if (host == "accounts.google.com" || host.ends_with(".accounts.google.com")) || 
+                   (host == "appleid.apple.com" || host.ends_with(".appleid.apple.com")) {
                     log::debug!("PolicyManager: ALLOWED OAuth provider: {}", host);
                     return true;
                 }
@@ -64,6 +71,19 @@ impl PolicyEnforcer for PolicyManager {
         // For external links, we apply a broader security check.
         // For now, allow https only and block common malicious protocols.
         if let Ok(parsed_url) = url::Url::parse(url) {
+            // Block known tracker and telemetry domains from jumping out to the browser
+            if let Some(host) = parsed_url.host_str() {
+                if host.contains("googletagmanager.com")
+                    || host.contains("google-analytics.com")
+                    || host.contains("amplitude.com")
+                    || host.contains("mixpanel.com")
+                    || host.contains("segment.com")
+                {
+                    log::warn!("PolicyManager: BLOCKED tracker/telemetry domain: {}", host);
+                    return false;
+                }
+            }
+
             match parsed_url.scheme() {
                 "https" => true,
                 "mailto" => true,
@@ -85,9 +105,9 @@ impl PolicyEnforcer for PolicyManager {
             if let Some(host) = parsed_url.host_str() {
                 // If it's an official Notion domain or OAuth provider, keep it in the app
                 if self.is_official_notion(host) || 
-                   host.contains("accounts.google.com") || 
-                   host.contains("appleid.apple.com") ||
-                   host.contains("apple.com") {
+                   (host == "accounts.google.com" || host.ends_with(".accounts.google.com")) || 
+                   (host == "appleid.apple.com" || host.ends_with(".appleid.apple.com")) ||
+                   (host == "apple.com" || host.ends_with(".apple.com")) {
                     return false;
                 }
             }
@@ -139,7 +159,13 @@ mod tests {
     fn test_block_unauthorized_urls() {
         let policy = PolicyManager::new();
         assert!(!policy.validate_url("https://google.com"));
+        
+        // Exact substring attack tests - should be blocked
+        assert!(!policy.validate_url("https://evilnotion.so"));
+        assert!(!policy.validate_url("https://hacker.evilnotion.so"));
+        assert!(!policy.validate_url("https://accounts.google.com.evil.com"));
         assert!(!policy.validate_url("https://malicious-site.com/notion.so"));
+        
         assert!(!policy.validate_url("http://localhost:3000"));
     }
 

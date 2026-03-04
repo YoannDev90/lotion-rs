@@ -37,7 +37,7 @@ jobs:
             libayatana-appindicator3-dev \
             librsvg2-dev \
             libhunspell-dev \
-            libclang-dev clang
+            libclang-dev clang llvm
 
       - name: Setup Rust (stable + components)
         uses: dtolnay/rust-toolchain@stable
@@ -88,7 +88,7 @@ jobs:
             libayatana-appindicator3-dev \
             librsvg2-dev \
             libhunspell-dev \
-            libclang-dev clang
+            libclang-dev clang llvm
 
       - name: Setup Rust (stable)
         uses: dtolnay/rust-toolchain@stable

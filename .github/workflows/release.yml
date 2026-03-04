@@ -50,7 +50,7 @@ jobs:
             libayatana-appindicator3-dev \
             librsvg2-dev \
             libhunspell-dev \
-            libclang-dev clang \
+            libclang-dev clang llvm \
             rpm
 
       - uses: dtolnay/rust-toolchain@stable

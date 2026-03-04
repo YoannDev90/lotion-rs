@@ -13,11 +13,28 @@ impl WindowController {
         security: Arc<dyn SecuritySandbox>,
     ) -> tauri::Result<Self> {
         let window = WindowBuilder::new(app, "main")
-            .title("Lotion-Engine")
+            .title("Lotion (Notion Engine)")
             .inner_size(1200.0, 768.0)
-            .decorations(false) // Frameless to allow Iced to provide the chrome
-            .transparent(true)  // Allow transparency for a unified look
+            .decorations(false) // Custom injected Mac-like titlebar handles this now
+            .transparent(true)
             .build()?;
+
+        // Ensure window state exists in AppState
+        let app_state_lock = app.state::<Arc<tokio::sync::Mutex<crate::state::AppState>>>();
+        let mut app_state = app_state_lock.blocking_lock();
+        if !app_state.windows.contains_key("main") {
+            app_state.windows.insert("main".to_string(), crate::state::WindowState {
+                id: "main".to_string(),
+                bounds: crate::state::Bounds { x: None, y: None, width: 1200.0, height: 768.0 },
+                is_focused: true,
+                is_maximized: false,
+                is_minimized: false,
+                is_full_screen: false,
+                tab_ids: Vec::new(),
+                active_tab_id: None,
+            });
+            let _ = app_state.save_to_disk();
+        }
 
         Ok(Self { window, security })
     }
@@ -27,24 +44,47 @@ impl WindowController {
         
         self.window.on_window_event(move |event| {
             match event {
-                tauri::WindowEvent::CloseRequested { api, .. } => {
+                tauri::WindowEvent::CloseRequested { .. } => {
                     log::info!("Window {} close requested", window_label);
-                    api.prevent_close();
-                    if let Some(w) = app_handle.get_window(&window_label) {
-                        let _ = w.close();
-                    }
+                    app_handle.exit(0);
                 }
                 tauri::WindowEvent::Focused(focused) => {
                     log::debug!("Window {} focused: {}", window_label, focused);
-                    // TODO: Dispatch action to update Redux-like store
+                    let app_state_lock = app_handle.state::<Arc<tokio::sync::Mutex<crate::state::AppState>>>();
+                    let mut app_state = app_state_lock.blocking_lock();
+                    if *focused {
+                        app_state.focused_window_id = Some(window_label.clone());
+                    }
+                    if let Some(w_state) = app_state.windows.get_mut(&window_label) {
+                        w_state.is_focused = *focused;
+                    }
+                    let _ = app_state.save_to_disk();
                 }
                 tauri::WindowEvent::Resized(size) => {
                     log::debug!("Window {} resized to {:?}", window_label, size);
-                    // TODO: Dispatch action to update Redux-like store and update view bounds
+                    if let Some(w) = app_handle.get_window(&window_label) {
+                        let webviews = w.webviews();
+                        for webview in webviews {
+                            let _ = webview.set_size(*size);
+                        }
+                    }
+                    let app_state_lock = app_handle.state::<Arc<tokio::sync::Mutex<crate::state::AppState>>>();
+                    let mut app_state = app_state_lock.blocking_lock();
+                    if let Some(w_state) = app_state.windows.get_mut(&window_label) {
+                        w_state.bounds.width = size.width as f64;
+                        w_state.bounds.height = size.height as f64;
+                    }
+                    let _ = app_state.save_to_disk();
                 }
                 tauri::WindowEvent::Moved(position) => {
                     log::debug!("Window {} moved to {:?}", window_label, position);
-                    // TODO: Dispatch action to update Redux-like store
+                    let app_state_lock = app_handle.state::<Arc<tokio::sync::Mutex<crate::state::AppState>>>();
+                    let mut app_state = app_state_lock.blocking_lock();
+                    if let Some(w_state) = app_state.windows.get_mut(&window_label) {
+                        w_state.bounds.x = Some(position.x as f64);
+                        w_state.bounds.y = Some(position.y as f64);
+                    }
+                    let _ = app_state.save_to_disk();
                 }
                 _ => {}
             }
@@ -72,14 +112,28 @@ impl WindowController {
 
         if config.restore_tabs {
             let app_state_lock = app.state::<Arc<tokio::sync::Mutex<crate::state::AppState>>>();
-            let app_state = app_state_lock.blocking_lock();
+            let mut app_state = app_state_lock.blocking_lock();
 
             // Find state for THIS window
-            if let Some(window_state) = app_state.windows.get(self.window.label()) {
+            let window_label = self.window.label();
+            if let Some(window_state) = app_state.windows.get_mut(window_label) {
                 log::info!("WindowController: Restoring {} tabs from saved state.", window_state.tab_ids.len());
-                for tab_id in &window_state.tab_ids {
-                    if let Some(tab_state) = app_state.tabs.get(tab_id) {
-                        tab_manager.create_tab(app, self.window.label(), &tab_state.url)?;
+                let old_tab_ids = window_state.tab_ids.clone();
+                window_state.tab_ids.clear(); 
+
+                for old_id in &old_tab_ids {
+                    if let Some(tab_state) = app_state.tabs.get(old_id) {
+                        let url = tab_state.url.clone();
+                        // Drop the borrow of app_state so we can call create_tab (which might use it)
+                        // and re-borrow window_state to update it.
+                        // Actually, create_tab doesn't need a lock on app_state, but we need to update window_state.
+                        let new_tab_id = tab_manager.create_tab(app, window_label, &url)?;
+                        
+                        // Re-fetch window_state to avoid borrow conflict
+                        if let Some(ws) = app_state.windows.get_mut(window_label) {
+                            ws.tab_ids.push(new_tab_id.clone());
+                        }
+                        let _ = tab_manager.show_tab(&new_tab_id);
                         tabs_restored = true;
                     }
                 }
@@ -89,8 +143,17 @@ impl WindowController {
         if !tabs_restored {
             let notion_url = "https://www.notion.so";
             log::info!("WindowController: Creating initial tab for Notion: {}", notion_url);
-            tab_manager.create_tab(app, self.window.label(), notion_url)?;
+            let tab_id = tab_manager.create_tab(app, self.window.label(), notion_url)?;
+
+            let app_state_lock = app.state::<Arc<tokio::sync::Mutex<crate::state::AppState>>>();
+            let mut app_state = app_state_lock.blocking_lock();
+            if let Some(window_state) = app_state.windows.get_mut(self.window.label()) {
+                window_state.tab_ids.push(tab_id.clone());
+            }
+
+            let _ = tab_manager.show_tab(&tab_id);
         }
+
 
         Ok(())
     }

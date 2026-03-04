@@ -1,26 +1,30 @@
 use std::sync::Arc;
 use crate::litebox::LiteBox;
-use crate::litebox::host::HostPlatform;
-use crate::traits::SecuritySandbox;
 
 pub struct SecurityModule {
-    pub litebox: Arc<LiteBox<HostPlatform>>,
+    pub litebox: Arc<LiteBox>,
+}
+
+impl Default for SecurityModule {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl SecurityModule {
     pub fn new() -> Self {
-        static PLATFORM: HostPlatform = HostPlatform;
-        let litebox = Arc::new(LiteBox::new(&PLATFORM));
-        Self { litebox }
+        let mut sandbox = LiteBox::new();
+        // Zero-Trust: Enforce OS-level boundaries at startup
+        if let Err(e) = sandbox.apply_sandbox() {
+            log::error!("CRITICAL: Failed to apply OS-level LiteBox sandbox: {}", e);
+            // In a strict Zero-Trust model, we should panic here if the sandbox fails.
+            // panic!("Security sandbox initialization failed");
+        }
+
+        Self {
+            litebox: Arc::new(sandbox),
+        }
     }
 }
 
-impl SecuritySandbox for SecurityModule {
-    fn initialize(&self) {
-        log::info!("SecurityModule: Initializing sandbox...");
-    }
-
-    fn get_fd_count(&self) -> usize {
-        self.litebox.descriptor_table().count()
-    }
-}
+// Note: LiteBox OS-level implementation already implements SecuritySandbox traits.

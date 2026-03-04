@@ -10,6 +10,12 @@ pub struct SpellcheckManager {
     pub hunspell: Mutex<Option<SafeHunspell>>,
 }
 
+impl Default for SpellcheckManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SpellcheckManager {
     pub fn new() -> Self {
         let manager = Self {
