@@ -1,441 +1,272 @@
 <p align="center">
-  <img width="35%" height="35%"  src="./assets/Banner.png" alt="Lotion - Unofficial Notion.so Desktop App for Linux">
+  <img width="35%" height="35%" src="./docs/images/Banner.png" alt="Lotion — Native Rust Desktop App for Notion.so">
 </p>
 
 <p align="center">
-  <a href="https://github.com/sponsors/puneetsl"><img src="https://img.shields.io/badge/Sponsor-%E2%9D%A4-pink?style=flat-square" alt="Sponsor"></a>
-  <img src="https://img.shields.io/badge/version-1.5.0-blue.svg" alt="Version">
-  <img src="https://img.shields.io/badge/platform-linux-lightgrey.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/electron-34.3.2-9feaf9.svg" alt="Electron">
-  <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
+  <strong>A native Rust desktop client for Notion.so — built for Linux, engineered for adversarial environments.</strong>
+</p>
+
+<p align="center">
+  <a href="https://github.com/puneetsl/lotion">Based on Lotion by Puneet Singh Ludu</a> &nbsp;·&nbsp;
+  <a href="https://github.com/SecByDesignCollective/Manifesto">Security Philosophy: SecByDesign Manifesto</a>
 </p>
 
 ---
-<div align="center">
-<table>
-<tr>
-<td>
-<strong>💖 Like Lotion?</strong><br>
-Consider <a href="https://github.com/sponsors/puneetsl">sponsoring me on GitHub</a> to keep this project alive and support more Linux tools!
-</td>
-</tr>
-</table>
-</div>
 
+# Lotion-rs
 
-## Introduction
+**Notion does not have a native Linux desktop client.** That gap is why the original [Lotion](https://github.com/puneetsl/lotion) Electron application was created by [Puneet Singh Ludu](https://github.com/puneetsl) — to give Linux users a proper, integrated Notion experience without resorting to the browser.
 
-Lotion is an unofficial Electron-based desktop application that brings Notion.so to Linux. While NotionHQ continues to focus on feature development for other platforms, Linux support remains a lower priority. This project aims to fill that gap by providing a native desktop experience with modern UI and comprehensive features.
+**Lotion-rs** is a complete port of that concept into Rust. It replaces the Electron/Node.js stack with [Tauri v2](https://v2.tauri.app/) for OS integration and a native injected UI, eliminating the heavy runtime overhead of a Chromium-based shell while adding a hardened, Zero-Trust security model aligned with the [SecByDesign Collective Manifesto](https://github.com/SecByDesignCollective/Manifesto).
 
+The result is a fast, memory-efficient, privacy-respecting Notion client that runs natively on Linux — and nowhere compromises on security.
 
- 
-<blockquote>
-"Hey we don't want to release on platforms that we cannot ensure the quality – the team is still small and we don't use Linux ourselves"
-<br>— Notion (@NotionHQ)
-</blockquote>
+---
 
-### Application Preview
+## Why This Exists
 
-<p align="center">
-  <img src="./assets/screenshot.png" alt="Lotion Application Screenshot" width="90%">
-</p>
+Notion HQ has historically deprioritised Linux. The web app works, but it offers no system integration: no tray icon, no native window controls, no OS-level theming, no spell check, no session persistence.
 
-> **First time hearing about Notion?**
->
-> Use this [link](https://www.notion.so/?r=55d4c384b54a457490f6cc1799bedc76) to sign up and get ready to manage your life like you have never managed before!
+The original Lotion solved this brilliantly using Electron. But Electron carries a cost:
+- A bundled Chromium (~100 MB+)
+- A Node.js runtime
+- A large memory footprint
+- No memory-safe systems layer
+
+Lotion-rs keeps everything that made Lotion great and rebuilds the foundation in Rust:
+
+| | Original Lotion | Lotion-rs |
+|---|---|---|
+| **Language** | TypeScript / JavaScript | Rust |
+| **Runtime** | Electron + Node.js | Tauri v2 (native) |
+| **UI** | Chromium renderer | System WebView + Injected native UI chrome |
+| **Memory** | ~200–400 MB | ~60–100 MB |
+| **Security** | Standard Electron sandbox | Zero-Trust + LiteBox sandboxing |
+| **Config** | JSON | TOML (`~/.config/lotion/config.toml`) |
+| **Packages** | `.deb`, `.rpm`, `.zip` | `.deb`, `.rpm`, `.AppImage` |
+
+---
+
+## Security Philosophy
+
+This project is developed in the spirit of the [Zero-Trust Engineering Manifesto](https://github.com/SecByDesignCollective/Manifesto):
+
+> *"We do not design for ideal conditions. We engineer for the worst case, because in modern adversarial environments, the worst case is the baseline."*
+
+What that means in practice for Lotion-rs:
+
+- **Zero-Trust by Default** — No network segment is trusted. The application enforces strict Content Security Policies and allows only verified Notion domains.
+- **LiteBox Sandboxing** — The Notion WebView runs in an isolated sandbox. Navigation to arbitrary URLs is blocked at the policy layer before a request is even made.
+- **Least Privilege** — The application requests only the OS permissions it requires. No access to your filesystem beyond `~/.config/lotion/`.
+- **Anti-Telemetry** — No usage data, analytics, or crash reports are sent anywhere. What happens on your machine stays on your machine.
+- **Fail-Safe Defaults** — If configuration is missing or malformed, the application falls back to safe, hardened defaults rather than failing open.
+- **Radical Transparency** — The source code is fully open for audit. Every security claim can be verified by reading the code.
 
 ---
 
 ## Features
 
-### User Interface
-- **Frameless Window Design** - Modern, seamless interface with custom title bar
-- **Tab Management** - Multiple tabs with drag-and-drop reordering, pinning, and favicon support
-- **Navigation Controls** - Integrated back, forward, and refresh buttons
-- **Built-in Themes** - 8 beautiful themes including Dracula, Nord, Gruvbox, and Catppuccin variants
-- **Dark Mode Support** - Automatic theme detection and switching
-- **Logo Menu** - Quick access to themes, project links, and GitHub repository
+### Core
+- **Full Notion.so Access** — Complete feature parity with the Notion web app, running natively on Linux.
+- **Multi-Tab Interface** — Open multiple Notion pages simultaneously, with tab persistence across restarts (`restore_tabs = true` in config).
+- **Native Window Controls** — Custom frameless window with a Mac-style injected title bar, tab bar, and navigation controls.
+- **System Tray Integration** — Minimise to tray and restore from tray without losing your session.
 
-### Core Functionality
-- **Full Notion.so Integration** - Complete access to all Notion features on Linux
-- **Native Linux Desktop Integration** - Proper icon support and system integration
-- **Cross-platform Compatibility** - Linux, macOS, and Windows support
+### Security
+- **LiteBox WebView Sandbox** — The Notion WebView is isolated; only `notion.so` and its authorised subdomains may load content.
+- **Strict Navigation Policy** — Requests to external domains are intercepted and either blocked or delegated to the system browser.
+- **No Remote Telemetry** — Zero data exfiltration. No analytics, no crash reporting pipeline, no "phone home".
 
-### Navigation & Interaction
-- **Context Menu** - Right-click menu with Cut, Copy, Paste, Select All, and link handling
-- **External Links** - Automatically open links in default browser
+### Customisation
+- **Theme Engine** — Ships with built-in themes (Dracula, Nord, and more). Theme is persisted to `~/.config/lotion/config.toml`.
+- **Custom CSS Injection** — Point `custom_css_path` in your config at any `.css` file to inject custom styles into the Notion interface at runtime.
+- **TOML Configuration** — Human-readable config file at `~/.config/lotion/config.toml` with hot-reloadable settings.
 
-### Spell Check
-- **English Language Support** - Built-in spell checking for English (US)
-- **Real-time Suggestions** - Right-click on misspelled words for suggestions
-- **Custom Dictionary** - Add words to your personal dictionary
-
-### Architecture
-- **Modern Electron Stack** - Built with Electron 34.3.2 and Electron Forge
-- **Redux State Management** - Centralized state for tabs, windows, and preferences
-- **WebContentsView API** - Efficient multi-tab implementation
-- **Multiple Package Formats** - DEB, RPM, and ZIP packages
-- **Multi-architecture** - x64 and ARM64 builds available
-
----
-
-## Themes
-
-Lotion includes beautiful built-in themes that transform Notion's appearance while keeping content readable. Access themes via the Lotion logo menu in the top-left corner.
-
-<p align="center">
-  <img src="./assets/theme.png" alt="Catppuccin Mocha Theme" width="90%">
-  <br>
-  <em>Catppuccin Mocha theme with synchronized tab bar</em>
-</p>
-
-### Available Themes
-
-- **Default (Notion)** - Uses Notion's default theme with system-aware tab bar
-- **Dracula** - Popular dark theme with purple and cyan accents
-- **Nord** - Arctic, north-bluish color palette
-- **Gruvbox Dark** - Retro groove colors with warm earth tones
-- **Catppuccin Mocha** - Warm dark theme with purple accents (shown above)
-- **Catppuccin Macchiato** - Slightly lighter than Mocha
-- **Catppuccin Frappe** - Cool dark theme with blue tones
-- **Catppuccin Latte** - Light theme option for bright environments
-
-### Theme Features
-
-- **Unified Theming** - Both page content and tab bar match the selected theme
-- **Minimal Design** - Themes style UI chrome (sidebar, topbar) while preserving content readability
-- **Instant Switching** - Change themes on the fly without restarting
-- **Custom CSS Support** - Add your own themes to `~/.config/Lotion/themes/`
-- **System Theme Integration** - Default theme respects your system's dark/light mode preference
-
-### Creating Custom Themes
-
-Create a new CSS file in `~/.config/Lotion/themes/your-theme.css`:
-
-```css
-/* My Custom Theme */
-:root {
-  --custom-bg: #1a1b26;
-  --custom-accent: #7aa2f7;
-}
-
-.notion-frame,
-body {
-  background: var(--custom-bg) !important;
-}
-
-.notion-sidebar {
-  background: var(--custom-bg) !important;
-}
-
-h1, h2, h3 {
-  color: var(--custom-accent) !important;
-}
-```
-
-Then select "Reload Custom CSS" from the logo menu to load your theme.
+### Platform
+- **Linux-First** — Primary development and testing target. Packages: `.deb`, `.rpm`, `.AppImage`.
+- **macOS Support** — Universal binary for x64 and ARM64 (Apple Silicon).
+- **Spell Check** — Leverages the system WebView's built-in spell checking.
+- **Auto-Update** — Built-in update mechanism via Tauri's updater plugin.
 
 ---
 
 ## Installation
 
-### Arch Linux (AUR)
+### Pre-built Packages
 
-For Arch Linux users, install from the AUR:
+Download the latest release from the [Releases](../../releases) page:
+
+| Platform | Package |
+|---|---|
+| Ubuntu / Debian | `.deb` |
+| Fedora / RHEL | `.rpm` |
+| Any Linux (x86_64) | `.AppImage` |
+| macOS (Intel) | `.dmg` (x86_64) |
+| macOS (Apple Silicon) | `.dmg` (aarch64) |
+
+### Debian / Ubuntu
 
 ```bash
-# Using yay
-yay -S lotion
-
-# Using paru
-paru -S lotion
-
-# Using makepkg manually
-git clone https://aur.archlinux.org/lotion.git
-cd lotion
-makepkg -si
+sudo dpkg -i lotion_*.deb
 ```
 
-#### Quick Install from Source
-
-Alternatively, install directly from this repository with a one-liner:
+### Fedora / RHEL
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/puneetsl/lotion/master/install-arch.sh)
+sudo rpm -i lotion-*.rpm
 ```
 
-Or download and review the script first:
+### AppImage (any Linux)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/puneetsl/lotion/master/install-arch.sh -o install-arch.sh
-bash install-arch.sh
+chmod +x Lotion_*.AppImage
+./Lotion_*.AppImage
 ```
 
-**Important Notes for Arch Users:**
-- The PKGBUILD downloads the complete source tarball which includes all assets (icons, desktop files, etc.)
-- Do NOT add `icon.png` or other assets as separate source entries
-- If you encounter a 404 error for `icon.png`, ensure you're using the latest PKGBUILD from this repository
-- For detailed troubleshooting, see [PKGBUILD.md](PKGBUILD.md)
+---
 
-### Debian/Ubuntu (.deb package)
+## Building from Source
 
-Download the latest `.deb` package from [Releases](https://github.com/puneetsl/lotion/releases):
+### Prerequisites
 
+**Linux:**
 ```bash
-sudo dpkg -i lotion_1.0.0_amd64.deb
-
-# If you have dependency issues:
-sudo apt install -f
+sudo apt-get install -y \
+  libwebkit2gtk-4.1-dev \
+  build-essential curl wget file \
+  libxdo-dev libssl-dev \
+  libayatana-appindicator3-dev \
+  librsvg2-dev
 ```
 
-### Fedora/RHEL (.rpm package)
+**macOS:**  
+Xcode Command Line Tools are sufficient. No extra dependencies required.
 
-Download the latest `.rpm` package from [Releases](https://github.com/puneetsl/lotion/releases):
-
+**All platforms:**
 ```bash
-sudo rpm -i lotion-1.0.0.x86_64.rpm
+# Install Rust (if not already installed)
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
-# Or using dnf:
-sudo dnf install ./lotion-1.0.0.x86_64.rpm
+# Install Tauri CLI
+cargo install tauri-cli --version "^2.0"
 ```
 
-### From Source
+### Build
 
-1. **Clone the repository:**
 ```bash
-git clone git@github.com:puneetsl/lotion.git
-cd lotion
+git clone https://github.com/your-username/lotion-rs.git
+cd lotion-rs/src-tauri
+cargo tauri build
 ```
 
-2. **Install dependencies:**
-```bash
-npm install
-```
+Packaged bundles will be output to `src-tauri/target/release/bundle/`.
 
-3. **Run in development mode:**
-```bash
-npm run dev
-```
-
-### Build Packages
-
-To build distribution packages:
+### Development Run
 
 ```bash
-# Build .deb package (recommended for Debian/Ubuntu)
-npx electron-forge make --targets @electron-forge/maker-deb
-
-# Build all Linux packages
-npm run make:linux
-
-# Packages will be in the 'out' directory:
-# - .deb package (Debian/Ubuntu)
-# - .rpm package (Red Hat/Fedora/openSUSE)
-# - .zip archive (universal)
-```
-
-### Install the .deb Package
-
-```bash
-sudo dpkg -i out/make/deb/x64/lotion_1.0.0_amd64.deb
-
-# If you have dependency issues on non-Debian systems:
-sudo dpkg -i --force-depends out/make/deb/x64/lotion_1.0.0_amd64.deb
-```
-
-### Portable Installation
-
-For a portable install (no system installation required):
-
-```bash
-./portable.sh
+cd src-tauri
+cargo tauri dev
 ```
 
 ---
 
 ## Configuration
 
-The application stores configuration in `config/config.json`:
+Lotion-rs stores its configuration at `~/.config/lotion/config.toml`. The file is created automatically on first run with sensible defaults.
 
-```json
-{
-  "domainBaseUrl": "https://www.notion.so"
-}
+```toml
+# Active UI theme
+active_theme = "dracula"
+
+# Optional: path to a custom CSS file to inject into the Notion interface
+# custom_css_path = "/home/user/.config/lotion/my-theme.css"
+
+# Whether to restore open tabs on next launch
+restore_tabs = true
+
+[window]
+width = 1200.0
+height = 800.0
+maximized = false
 ```
 
-User data and preferences are automatically saved in:
-- **Linux**: `~/.config/Lotion/`
+| Key | Default | Description |
+|---|---|---|
+| `active_theme` | `"dracula"` | Name of the built-in theme to apply |
+| `custom_css_path` | `null` | Absolute path to a custom CSS file |
+| `restore_tabs` | `true` | Restore open tabs on launch |
+| `window.width` | `1200` | Initial window width in pixels |
+| `window.height` | `800` | Initial window height in pixels |
+| `window.maximized` | `false` | Start maximised |
 
 ---
 
-## Keyboard Shortcuts
+## Project Structure
 
-### Navigation
-Use the navigation buttons in the tab bar:
-- Back button (‹) - Go back
-- Forward button (›) - Go forward
-- Refresh button (↻) - Reload page
-
-### Development
-- `Ctrl+Shift+I` / `F12` - Toggle Developer Tools (dev mode only)
+```
+lotion-rs/
+├── src-tauri/           # Rust / Tauri backend
+│   ├── src/
+│   │   ├── main.rs           # Entry point, Tauri app bootstrap
+│   │   ├── config.rs         # TOML config load/save
+│   │   ├── window_controller.rs  # Window state management
+│   │   ├── tab_controller.rs     # Multi-tab logic
+│   │   ├── tab_manager.rs    # Tab orchestration
+│   │   ├── policy.rs         # Zero-Trust policy enforcement
+│   │   └── theming.rs        # Native CSS/JS theming engine
+│   ├── assets/          # Icons, banner, CSS themes
+│   ├── i18n/            # Internationalisation strings
+│   └── tauri.conf.json  # Tauri v2 configuration
+└── .github/workflows/   # CI/CD: build and release pipeline
+```
 
 ---
 
-## Spell Check
+## CI / CD
 
-Lotion includes built-in spell checking with support for English (US):
+The project uses GitHub Actions to build and release on every tagged version (`v*`). Builds are produced for:
 
-### How to Use:
-1. Type text in any editable field in Notion
-2. Right-click on any misspelled word (underlined in red)
-3. Select from the suggested corrections
-4. Or choose "Add to Dictionary" to remember the word
+- Linux x86_64 → `.deb`, `.rpm`, `.AppImage`
+- macOS x86_64 → `.dmg`
+- macOS aarch64 (Apple Silicon) → `.dmg`
 
-Spell check works automatically in all text fields and is always enabled.
-
----
-
-## Development
-
-### Project Structure
-
-```
-lotion/
-├── src/
-│   ├── main/
-│   │   ├── controllers/      # WindowController, TabController, AppController
-│   │   ├── store/            # Redux store & slices (tabs, windows, settings)
-│   │   ├── index.js          # Main process entry point
-│   │   └── spellCheckMenu.js # Spell check menu functionality
-│   └── renderer/
-│       ├── tab-bar/          # Custom tab bar UI (vanilla JS)
-│       │   ├── index.html    # Tab bar HTML & CSS
-│       │   ├── renderer.js   # Tab bar rendering logic
-│       │   └── preload.js    # Tab bar IPC bridge
-│       └── preload.js        # Main preload script
-├── assets/                   # Application icons and images
-├── config/                   # Configuration files
-├── i18n/                     # Internationalization support
-└── build.js                  # Build configuration script
-```
-
-### Development Scripts
-
-```bash
-npm run start      # Start in development mode
-npm run dev        # Alias for start
-npm run package    # Package the application
-npm run make       # Create distribution packages
-npm run make:linux # Create Linux-specific packages
-```
-
-### Architecture Overview
-
-**Main Process**
-- **AppController**: Application lifecycle and multi-window orchestration
-- **WindowController**: Manages frameless windows with custom tab bars
-- **TabController**: Individual tab lifecycle and WebContentsView management
-- **Redux Store**: Centralized state for tabs, windows, and user preferences
-
-**Renderer Process**
-- **Tab Bar**: Custom vanilla JavaScript UI for tab management
-- **Web Content**: Loads Notion.so web application in WebContentsView instances
-- **IPC Bridge**: Secure communication between main and renderer processes
-
-**Key Technologies**
-- WebContentsView API for efficient tab rendering
-- Electron context isolation for security
-- Redux Toolkit for state management
-- Native context menus with spell check integration
-
----
-
-## Contributing
-
-Contributions are welcome! Here's how you can help:
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Make your changes and test thoroughly on Linux
-4. Commit your changes: `git commit -m 'Add amazing feature'`
-5. Push to the branch: `git push origin feature/amazing-feature`
-6. Open a Pull Request
-
-### For Maintainers
-
-If you're maintaining the AUR package, see [AUR_SUBMISSION.md](AUR_SUBMISSION.md) for detailed instructions on:
-- Submitting to AUR for the first time
-- Updating the package for new releases
-- Testing and troubleshooting
+See [`.github/workflows/build-and-release.yml`](.github/workflows/build-and-release.yml) for the full pipeline definition.
 
 ---
 
 ## Acknowledgments
 
-- Thanks to [sysdrum/notion-app](https://github.com/sysdrum/notion-app) for inspiration and initial code
-- Built with Electron and modern web technologies
+- **[Puneet Singh Ludu](https://github.com/puneetsl)** — Creator of the original [Lotion](https://github.com/puneetsl/lotion) Electron application for Linux. Lotion-rs would not exist without that project's vision of bringing Notion natively to the Linux desktop. Tremendous respect and thanks.
+- **[sysdrum/notion-app](https://github.com/sysdrum/notion-app)** — Early inspiration referenced in the original Lotion project.
+- **[SecByDesign Collective](https://github.com/SecByDesignCollective/Manifesto)** — The Zero-Trust Engineering Manifesto, which defines the security philosophy this project is built on.
+- **[Tauri v2](https://v2.tauri.app/)** — The framework that makes a lightweight, cross-platform, Rust-native desktop app possible.
+- **[Microsoft LiteBox](https://github.com/microsoft/LiteBox)** — The sandboxing technology used to isolate the Notion WebView, providing the Zero-Trust process containment layer at the core of Lotion-rs's security model.
+
+---
+
+## Support the Project
+
+### 💼 Open to Work
+
+I'm currently **looking for a job** — open to roles in systems programming, security engineering, Rust development, or Linux desktop tooling. If you're hiring or know of an opportunity, feel free to reach out via a GitHub issue or discussion.
+
+### ☕ Donations
+
+If this project saves you time or you just want to support its continued development, donations are welcome and very much appreciated.
+
+**Ethereum (ETH / ERC-20):**
+```
+0xe7254b9a20a95658167a84120a84dce9326ef3ac
+```
+
+---
+
+## Disclaimer
+
+This is an unofficial, community-maintained application. It is not affiliated with, endorsed by, or supported by Notion Labs, Inc. Please respect [Notion's Terms of Service](https://www.notion.so/Terms-and-Privacy-28ffdd083dc3473e9c2da6ec011b58ac) when using this software.
 
 ---
 
 ## License
 
-This project is for educational and personal use. Please respect Notion's terms of service.
-
-### Disclaimer
-
-This is an unofficial adaptation of Notion's desktop application. It is not affiliated with, endorsed by, or supported by Notion Labs, Inc.
-
----
-
-## Uninstall
-
-### For .deb Package Installation
-
-```bash
-# Using dpkg
-sudo dpkg -r lotion
-
-# Or using apt
-sudo apt remove lotion
-```
-
-### For .rpm Package Installation
-
-```bash
-# Using rpm
-sudo rpm -e lotion
-
-# Or using dnf/yum
-sudo dnf remove lotion
-# or
-sudo yum remove lotion
-```
-
-### For Source/Portable Installation
-
-Simply delete the application directory:
-
-```bash
-rm -rf /path/to/lotion
-
-# Also remove user data (optional)
-rm -rf ~/.config/Lotion ~/.cache/lotion
-```
-
----
-
-## Support
-
-For issues and questions, please use the GitHub issue tracker:
-- [Report a bug](https://github.com/puneetsl/lotion/issues)
-- [Request a feature](https://github.com/puneetsl/lotion/issues)
-- [Ask a question](https://github.com/puneetsl/lotion/discussions)
-
----
-
-### Advertisement: [Memodiction.com](https://memodiction.com/)
-*A dictionary that helps you remember words*
-
----
-
-<p align="center">Made for the Linux community</p>
+MIT License — see [LICENSE](LICENSE) for full text.
