@@ -4,6 +4,7 @@
 node_modules
 out
 official_notion
+docs
 dist-tauri
 
 # AUR build artifacts

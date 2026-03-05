@@ -13,3 +13,6 @@ pub mod config;
 pub mod i18n;
 pub mod spellcheck;
 
+#[cfg(test)]
+pub mod stress_test;
+

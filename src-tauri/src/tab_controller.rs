@@ -119,12 +119,13 @@ impl TabController {
                 }
             });
 
+        let inner_size = window.inner_size()?;
         let webview = window.add_child(
             webview_builder,
             tauri::LogicalPosition::new(0.0, 0.0),
             tauri::LogicalSize::new(
-                window.inner_size().unwrap().width as f64, 
-                window.inner_size().unwrap().height as f64
+                inner_size.width as f64, 
+                inner_size.height as f64
             )
         )?;
 

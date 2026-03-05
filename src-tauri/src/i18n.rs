@@ -37,7 +37,7 @@ impl I18nManager {
             return;
         }
 
-        *self.locale.lock().unwrap() = locale.to_string();
+        *self.locale.lock().expect("I18nManager: locale lock poisoned") = locale.to_string();
         
         // Resolve path to bundled i18n JSON
         if let Ok(resource_dir) = app.path().resource_dir() {
@@ -49,7 +49,7 @@ impl I18nManager {
                     if entry.path().extension().and_then(|s| s.to_str()) == Some("json") {
                         if let Ok(content) = fs::read_to_string(entry.path()) {
                             if let Ok(json) = serde_json::from_str::<HashMap<String, Value>>(&content) {
-                                let mut tr = self.translations.lock().unwrap();
+                                let mut tr = self.translations.lock().expect("I18nManager: translations lock poisoned");
                                 tr.clear();
                                 for (k, v) in json {
                                     if let Some(s) = v.as_str() {
@@ -67,7 +67,7 @@ impl I18nManager {
     }
 
     pub fn get(&self, key: &str) -> String {
-        let tr = self.translations.lock().unwrap();
+        let tr = self.translations.lock().expect("I18nManager: translations lock poisoned");
         tr.get(key).cloned().unwrap_or_else(|| key.to_string())
     }
 }
