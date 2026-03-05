@@ -1,8 +1,8 @@
-use tauri::{AppHandle, Manager, WebviewUrl, Url, WebviewBuilder};
-use tauri::webview::Webview;
-use std::sync::Arc;
 use crate::litebox::LiteBox;
 use crate::traits::{PolicyEnforcer, ThemingEngine};
+use std::sync::Arc;
+use tauri::webview::Webview;
+use tauri::{AppHandle, Manager, Url, WebviewBuilder, WebviewUrl};
 
 pub struct TabController {
     pub tab_id: String,
@@ -19,21 +19,29 @@ impl TabController {
         _litebox: Arc<LiteBox>,
     ) -> tauri::Result<Self> {
         let policy = app.state::<Arc<dyn PolicyEnforcer>>().inner().clone();
-        
+
         // Zero-Trust Enforcement: Validate URL before creation
         if !policy.validate_url(url_str) {
-            return Err(tauri::Error::AssetNotFound(format!("Zero-Trust Policy Blocked: {}", url_str)));
+            return Err(tauri::Error::AssetNotFound(format!(
+                "Zero-Trust Policy Blocked: {}",
+                url_str
+            )));
         }
 
-        let window = app.get_window(window_id).ok_or(
-            tauri::Error::AssetNotFound(format!("Window {} not found", window_id))
-        )?;
+        let window = app
+            .get_window(window_id)
+            .ok_or(tauri::Error::AssetNotFound(format!(
+                "Window {} not found",
+                window_id
+            )))?;
 
-        let url = url_str.parse::<Url>().map_err(|e| tauri::Error::AssetNotFound(e.to_string()))?;
+        let url = url_str
+            .parse::<Url>()
+            .map_err(|e| tauri::Error::AssetNotFound(e.to_string()))?;
 
         // Create a new webview for this tab
         let mut webview_builder = WebviewBuilder::new(&tab_id, WebviewUrl::External(url.clone()));
-        
+
         let nav_app = app.clone();
         let nav_policy = policy.clone();
         let popup_app = app.clone();
@@ -49,7 +57,7 @@ impl TabController {
                 if url_str.starts_with("lotion-action://") {
                     let action = url_str.strip_prefix("lotion-action://").unwrap_or("");
                     log::info!("Intercepted Lotion action: {}", action);
-                    
+
                     if let Some(w) = nav_app.get_window(window_id) {
                         match action {
                             "window:close" => {
@@ -70,7 +78,7 @@ impl TabController {
                                 if let Some(orchestrator) = nav_app.try_state::<Arc<dyn crate::traits::TabOrchestrator>>() {
                                     if let Ok(new_id) = orchestrator.inner().create_tab(&nav_app, window_id, notion_url) {
                                         let _ = orchestrator.inner().show_tab(&new_id);
-                                        
+
                                         // Update AppState
                                         if let Some(state_lock) = nav_app.try_state::<Arc<tokio::sync::Mutex<crate::state::AppState>>>() {
                                             let mut app_state = state_lock.blocking_lock();
@@ -123,10 +131,7 @@ impl TabController {
         let webview = window.add_child(
             webview_builder,
             tauri::LogicalPosition::new(0.0, 0.0),
-            tauri::LogicalSize::new(
-                inner_size.width as f64, 
-                inner_size.height as f64
-            )
+            tauri::LogicalSize::new(inner_size.width as f64, inner_size.height as f64),
         )?;
 
         log::info!("Created tab webview: {} in window: {}", tab_id, window_id);
@@ -137,18 +142,19 @@ impl TabController {
         theming.inject_theme(&webview, &active_theme);
 
         // Inject title observer and custom Mac-style Window Controls
-        let title_observer_js = format!(r#"
+        let title_observer_js = format!(
+            r#"
             (function() {{
                 const tabId = '{}';
-                
+
                 // 1. Title Observer
                 let lastTitle = document.title;
                 const observer = new MutationObserver(function() {{
                     if (document.title !== lastTitle) {{
                         lastTitle = document.title;
                         if (window.__TAURI__) {{
-                            window.__TAURI__.invoke('update_tab_state', {{ 
-                                tabId: tabId, 
+                            window.__TAURI__.invoke('update_tab_state', {{
+                                tabId: tabId,
                                 title: lastTitle,
                                 url: window.location.href
                             }});
@@ -246,11 +252,11 @@ impl TabController {
                     const closeBtn = createBtn('#ff5f56', () => {{
                         window.location.href = 'lotion-action://window:close';
                     }});
-                    
+
                     const minBtn = createBtn('#ffbd2e', () => {{
                         window.location.href = 'lotion-action://window:minimize';
                     }});
-                    
+
                     const maxBtn = createBtn('#27c93f', () => {{
                         window.location.href = 'lotion-action://window:maximize';
                     }});
@@ -281,7 +287,7 @@ impl TabController {
                             const tabEl = document.createElement('div');
                             tabEl.className = 'lotion-tab' + (t.id === tabId ? ' active' : '');
                             tabEl.innerText = t.title || 'Notion';
-                            
+
                             const closeX = document.createElement('span');
                             closeX.className = 'lotion-tab-close';
                             closeX.innerText = ' ×';
@@ -289,7 +295,7 @@ impl TabController {
                                 e.stopPropagation();
                                 window.__TAURI__.invoke('close_tab', {{ tabId: t.id }});
                             }};
-                            
+
                             tabEl.appendChild(closeX);
                             tabEl.onclick = () => {{
                                 if (t.id !== tabId) {{
@@ -298,7 +304,7 @@ impl TabController {
                             }};
                             tabList.appendChild(tabEl);
                         }});
-                        
+
                         const newTab = createBtn('#27c93f', () => {{
                             window.location.href = 'lotion-action://tab:new';
                         }}, '+');
@@ -310,13 +316,15 @@ impl TabController {
                     btnContainer.appendChild(tabList);
                     titlebar.appendChild(btnContainer);
                     document.body.appendChild(titlebar);
-                    
+
                     renderTabs();
                     // Poll for tab changes (simple for now)
                     setInterval(renderTabs, 5000);
                 }});
             }})();
-        "#, tab_id, window_id);
+        "#,
+            tab_id, window_id
+        );
         let _ = webview.eval(&title_observer_js);
 
         // Inject network monitor — intercepts fetch and XHR to log status/errors
@@ -369,7 +377,7 @@ impl TabController {
 
     pub fn load_url(&self, app: &AppHandle, url: &str) -> tauri::Result<()> {
         let policy = app.state::<Arc<dyn PolicyEnforcer>>();
-        
+
         // Zero-Trust Enforcement: Validate URL before navigation
         if !policy.validate_url(url) {
             log::warn!("Zero-Trust Policy Blocked navigation to: {}", url);
@@ -377,7 +385,9 @@ impl TabController {
         }
 
         log::info!("Tab {}: Loading URL {}", self.tab_id, url);
-        let url = url.parse::<Url>().map_err(|e| tauri::Error::AssetNotFound(e.to_string()))?;
+        let url = url
+            .parse::<Url>()
+            .map_err(|e| tauri::Error::AssetNotFound(e.to_string()))?;
         self.webview.navigate(url)?;
         Ok(())
     }
@@ -400,15 +410,18 @@ impl TabController {
 }
 
 /// Routes secure popup requests into the application's internal TabManager.
-/// Guaranteeing that any nested popups (e.g. nested OAuth flows) inherit 
-/// the exact same zero-trust `on_navigation` and `on_new_window` policies 
+/// Guaranteeing that any nested popups (e.g. nested OAuth flows) inherit
+/// the exact same zero-trust `on_navigation` and `on_new_window` policies
 /// as their parent window via the TabController factory.
 pub fn spawn_secure_popup(app: &AppHandle, _policy: Arc<dyn PolicyEnforcer>, url: Url) {
-    log::info!("Intercepted popup request. Routing into a secure in-app tab: {}", url.as_str());
-    
-    // Instead of spawning a completely disconnected OS window, dispatch the popup 
+    log::info!(
+        "Intercepted popup request. Routing into a secure in-app tab: {}",
+        url.as_str()
+    );
+
+    // Instead of spawning a completely disconnected OS window, dispatch the popup
     // into our managed TabOrchestrator. This keeps the application bounded strictly
-    // to a single window and enforces all Zero-Trust policies recursively since 
+    // to a single window and enforces all Zero-Trust policies recursively since
     // create_tab() uses the TabController factory.
     if let Some(orchestrator) = app.try_state::<Arc<dyn crate::traits::TabOrchestrator>>() {
         if let Err(e) = orchestrator.inner().create_tab(app, "main", url.as_str()) {
