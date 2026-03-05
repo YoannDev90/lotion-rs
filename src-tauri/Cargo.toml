@@ -4,11 +4,8 @@ version = "0.2.0"
 edition = "2021"
 
 [dependencies]
-rand = "0.8"
 log = "0.4"
 env_logger = "0.10"
-zstd = "0.13"
-byteorder = "1.5"
 tauri = { version = "2.0", features = ["tray-icon", "unstable"] }
 tauri-plugin-shell = "2"
 tauri-plugin-updater = "2.0"
@@ -18,7 +15,6 @@ serde_json = "1.0"
 uuid = { version = "1.7", features = ["v4"] }
 tokio = { version = "1.0", features = ["full"] }
 url = "2.5"
-opener = "0.7"
 toml = "0.8"
 dirs = "5.0"
 hunspell-rs = "0.3.0"
