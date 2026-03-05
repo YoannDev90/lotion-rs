@@ -165,7 +165,7 @@ cargo install tauri-cli --version "^2.0"
 ### Build
 
 ```bash
-git clone https://github.com/your-username/lotion-rs.git
+git clone https://github.com/diegoakanotoperator/lotion-rs.git
 cd lotion-rs/src-tauri
 cargo tauri build
 ```
