@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, rust-version]
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop, rust-version]
 
 # Cancel any in-progress run for the same branch/PR so we never waste minutes.
 concurrency:
