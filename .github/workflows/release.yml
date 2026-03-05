@@ -126,9 +126,6 @@ jobs:
         working-directory: src-tauri
         run: |
           export SDKROOT=$(xcrun --show-sdk-path)
-          export LLVM_PATH=$(brew --prefix llvm)
-          export LIBCLANG_PATH="$LLVM_PATH/lib"
-          export DYLD_LIBRARY_PATH="$LLVM_PATH/lib:$DYLD_LIBRARY_PATH"
           cargo tauri build --target x86_64-apple-darwin
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
@@ -138,6 +135,8 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          LIBCLANG_PATH: /usr/local/opt/llvm/lib
+          DYLD_LIBRARY_PATH: /usr/local/opt/llvm/lib
 
       - name: Stage bundles
         run: |
@@ -189,9 +188,6 @@ jobs:
         working-directory: src-tauri
         run: |
           export SDKROOT=$(xcrun --show-sdk-path)
-          export LLVM_PATH=$(brew --prefix llvm)
-          export LIBCLANG_PATH="$LLVM_PATH/lib"
-          export DYLD_LIBRARY_PATH="$LLVM_PATH/lib:$DYLD_LIBRARY_PATH"
           cargo tauri build --target aarch64-apple-darwin
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
@@ -201,6 +197,8 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          LIBCLANG_PATH: /opt/homebrew/opt/llvm/lib
+          DYLD_LIBRARY_PATH: /opt/homebrew/opt/llvm/lib
 
       - name: Stage bundles
         run: |
