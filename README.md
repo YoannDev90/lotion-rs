@@ -239,7 +239,7 @@ The project uses GitHub Actions to build and release on every tagged version (`v
 - macOS x86_64 → `.dmg`
 - macOS aarch64 (Apple Silicon) → `.dmg`
 
-See [`.github/workflows/build-and-release.yml`](.github/workflows/build-and-release.yml) for the full pipeline definition.
+See [`.github/workflows/release.yml`](.github/workflows/release.yml) for the full pipeline definition.
 
 ---
 
