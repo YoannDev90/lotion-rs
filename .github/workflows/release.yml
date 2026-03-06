@@ -118,18 +118,16 @@ jobs:
       - uses: cargo-bins/cargo-binstall@main
       - run: cargo binstall --no-confirm tauri-cli@^2
 
-      - name: Discover LLVM path
-        id: llvm
-        run: echo "lib_dir=$(brew --prefix llvm)/lib" >> "$GITHUB_OUTPUT"
-
       - name: Build bundles
         working-directory: src-tauri
         run: |
           export SDKROOT=$(xcrun --show-sdk-path)
+          export LIBCLANG_PATH="$(brew --prefix llvm)/lib"
+          export DYLD_LIBRARY_PATH="$(brew --prefix llvm)/lib"
+          echo "LIBCLANG_PATH: $LIBCLANG_PATH"
+          ls -la "$LIBCLANG_PATH" | head -20
           cargo tauri build --target x86_64-apple-darwin
         env:
-          LIBCLANG_PATH: ${{ steps.llvm.outputs.lib_dir }}
-          DYLD_LIBRARY_PATH: ${{ steps.llvm.outputs.lib_dir }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
@@ -178,18 +176,16 @@ jobs:
       - uses: cargo-bins/cargo-binstall@main
       - run: cargo binstall --no-confirm tauri-cli@^2
 
-      - name: Discover LLVM path
-        id: llvm
-        run: echo "lib_dir=$(brew --prefix llvm)/lib" >> "$GITHUB_OUTPUT"
-
       - name: Build bundles
         working-directory: src-tauri
         run: |
           export SDKROOT=$(xcrun --show-sdk-path)
+          export LIBCLANG_PATH="$(brew --prefix llvm)/lib"
+          export DYLD_LIBRARY_PATH="$(brew --prefix llvm)/lib"
+          echo "LIBCLANG_PATH: $LIBCLANG_PATH"
+          ls -la "$LIBCLANG_PATH" | head -20
           cargo tauri build --target aarch64-apple-darwin
         env:
-          LIBCLANG_PATH: ${{ steps.llvm.outputs.lib_dir }}
-          DYLD_LIBRARY_PATH: ${{ steps.llvm.outputs.lib_dir }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
@@ -319,7 +315,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.version }}
-          name: "Lotion ${{ steps.tag.outputs.version }}"
+          name: "lotion-rs ${{ steps.tag.outputs.version }}"
           body_path: CHANGELOG_RELEASE.md
           draft: false
           prerelease: ${{ contains(steps.tag.outputs.version, '-') }}
