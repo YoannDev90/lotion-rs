@@ -134,12 +134,12 @@ mod tests {
     fn test_should_route_popup_to_system_browser() {
         let policy = PolicyManager::new();
         // OAuth providers should NOT be routed (they stay in app to capture session)
-        assert!(!policy
-            .should_route_popup_to_system_browser("https://accounts.google.com/o/oauth2/v2/auth"));
+        assert!(!policy.should_route_popup_to_system_browser("https://accounts.google.com/o/oauth2/v2/auth"));
         assert!(!policy.should_route_popup_to_system_browser("https://appleid.apple.com/auth"));
 
-        // External links should be routed
+        // External links (e.g., GitHub, Slack) should be routed to system browser
         assert!(policy.should_route_popup_to_system_browser("https://github.com/login"));
+        assert!(policy.should_route_popup_to_system_browser("https://slack.com/signin"));
 
         // Notion internal popups should NOT be routed
         assert!(!policy.should_route_popup_to_system_browser("https://www.notion.so/some-popup"));
@@ -153,7 +153,11 @@ mod tests {
     fn test_validate_official_notion_urls() {
         let policy = PolicyManager::new();
         assert!(policy.validate_url("https://www.notion.so"));
+        assert!(policy.validate_url("https://www.notion.so/login"));
         assert!(policy.validate_url("https://notion.com/some-page"));
+        assert!(policy.validate_url("https://msgstore.www.notion.so/v1/health"));
+        
+        // OAuth providers allowed during login
         assert!(policy.validate_url("https://accounts.google.com/auth"));
         assert!(policy.validate_url("https://appleid.apple.com/auth"));
     }
@@ -162,14 +166,19 @@ mod tests {
     fn test_block_unauthorized_urls() {
         let policy = PolicyManager::new();
         assert!(!policy.validate_url("https://google.com"));
+        assert!(!policy.validate_url("https://facebook.com"));
+        assert!(!policy.validate_url("https://malicious-site.com"));
 
-        // Exact substring attack tests - should be blocked
+        // Zero-Trust: Subdomain/Suffix Attacks
         assert!(!policy.validate_url("https://evilnotion.so"));
-        assert!(!policy.validate_url("https://hacker.evilnotion.so"));
+        assert!(!policy.validate_url("https://notion.so.evil.com"));
         assert!(!policy.validate_url("https://accounts.google.com.evil.com"));
         assert!(!policy.validate_url("https://malicious-site.com/notion.so"));
 
-        assert!(!policy.validate_url("http://localhost:3000"));
+        // Protocol security
+        assert!(!policy.validate_url("http://www.notion.so")); // Enforce HTTPS
+        assert!(!policy.validate_url("javascript:alert(1)"));
+        assert!(!policy.validate_url("data:text/html,base64..."));
     }
 
     #[test]
@@ -181,11 +190,18 @@ mod tests {
     #[test]
     fn test_validate_external_links() {
         let policy = PolicyManager::new();
-        assert!(
-            policy.validate_external_link("https://github.com/diegoakanotoperator/lotion-rs")
-        );
+        // Repository and support links should work (they open in browser)
+        assert!(policy.validate_external_link("https://github.com/diegoakanotoperator/lotion-rs"));
+        assert!(policy.validate_external_link("https://github.com/puneetsl/lotion"));
         assert!(policy.validate_external_link("mailto:support@notion.so"));
+
+        // Block unsafe protocols for external browser redirection
         assert!(!policy.validate_external_link("http://unsecure-link.com"));
         assert!(!policy.validate_external_link("javascript:alert('XSS')"));
+        assert!(!policy.validate_external_link("file:///etc/passwd"));
+        
+        // Block trackers/analytics even for external clicks
+        assert!(!policy.validate_external_link("https://www.googletagmanager.com/gtm.js"));
+        assert!(!policy.validate_external_link("https://www.google-analytics.com/collect"));
     }
 }

@@ -23,5 +23,8 @@ fluent = "0.16"
 [build-dependencies]
 tauri-build = "2.0"
 
+[dev-dependencies]
+tempfile = "3"
+
 [target.'cfg(target_os = "linux")'.dependencies]
 libc = "0.2.182"
