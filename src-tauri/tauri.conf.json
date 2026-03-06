@@ -1,5 +1,5 @@
 {
-    "productName": "Lotion",
+    "productName": "lotion-rs",
     "version": "0.2.0",
     "identifier": "com.lotion.rs",
     "build": {
