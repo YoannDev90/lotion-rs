@@ -71,6 +71,7 @@ impl SecuritySandbox for LiteBox {
 }
 
 // Fallback for macOS or unimplemented OS
+#[allow(dead_code)]
 #[cfg(not(any(target_os = "linux", target_os = "windows")))]
 fn apply_fallback_sandbox() -> Result<(), String> {
     log::warn!("LiteBox: No OS-level sandbox implemented for this platform. Running dangerously.");

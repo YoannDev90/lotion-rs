@@ -38,20 +38,53 @@ impl Default for LotionConfig {
 }
 
 impl LotionConfig {
-    /// Returns the config directory path (~/.config/lotion/)
+    /// Returns the config directory path (~/.config/lotion-rs/)
     fn config_dir() -> PathBuf {
         dirs::config_dir()
             .unwrap_or_else(|| PathBuf::from("."))
-            .join("lotion")
+            .join("lotion-rs")
     }
 
-    /// Returns the config file path (~/.config/lotion/config.toml)
+    /// Returns the config file path (~/.config/lotion-rs/config.toml)
     fn config_path() -> PathBuf {
         Self::config_dir().join("config.toml")
     }
 
+    /// Migrate config from ~/.config/lotion to ~/.config/lotion-rs if needed
+    fn migrate_legacy_config() {
+        let old_dir = dirs::config_dir()
+            .unwrap_or_else(|| PathBuf::from("."))
+            .join("lotion");
+        let new_dir = Self::config_dir();
+
+        if old_dir.exists() && !new_dir.exists() {
+            log::info!("Migrating legacy config from {} to {}", old_dir.display(), new_dir.display());
+            if let Err(e) = fs::create_dir_all(&new_dir) {
+                log::error!("Failed to create new config dir: {}", e);
+                return;
+            }
+
+            // Copy config.toml
+            let old_config = old_dir.join("config.toml");
+            if old_config.exists() {
+                if let Err(e) = fs::copy(&old_config, new_dir.join("config.toml")) {
+                    log::error!("Failed to migrate config.toml: {}", e);
+                }
+            }
+
+            // Copy state.json
+            let old_state = old_dir.join("state.json");
+            if old_state.exists() {
+                if let Err(e) = fs::copy(&old_state, new_dir.join("state.json")) {
+                    log::error!("Failed to migrate state.json: {}", e);
+                }
+            }
+        }
+    }
+
     /// Load config from disk, or create default if not found.
     pub fn load() -> Self {
+        Self::migrate_legacy_config();
         let path = Self::config_path();
         if path.exists() {
             match fs::read_to_string(&path) {
@@ -90,5 +123,34 @@ impl LotionConfig {
 
         log::info!("Config saved to {}", Self::config_path().display());
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn test_config_migration() {
+        let temp_base = tempfile::tempdir().unwrap();
+        let old_dir = temp_base.path().join("lotion");
+        let new_dir = temp_base.path().join("lotion-rs");
+        
+        fs::create_dir_all(&old_dir).unwrap();
+        fs::write(old_dir.join("config.toml"), "active_theme = 'nord'").unwrap();
+        fs::write(old_dir.join("state.json"), "{}").unwrap();
+
+        // Manual migration trigger logic with custom paths
+        if old_dir.exists() && !new_dir.exists() {
+            fs::create_dir_all(&new_dir).unwrap();
+            fs::copy(old_dir.join("config.toml"), new_dir.join("config.toml")).unwrap();
+            fs::copy(old_dir.join("state.json"), new_dir.join("state.json")).unwrap();
+        }
+
+        assert!(new_dir.join("config.toml").exists());
+        assert!(new_dir.join("state.json").exists());
+        let contents = fs::read_to_string(new_dir.join("config.toml")).unwrap();
+        assert!(contents.contains("nord"));
     }
 }

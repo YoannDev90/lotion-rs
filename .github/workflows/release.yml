@@ -71,7 +71,11 @@ jobs:
 
       - name: Build bundles
         working-directory: src-tauri
-        run: cargo tauri build --target x86_64-unknown-linux-gnu
+        run: |
+          export LIBCLANG_PATH=$(llvm-config --libdir)
+          export LD_LIBRARY_PATH=$(llvm-config --libdir):$LD_LIBRARY_PATH
+          echo "LIBCLANG_PATH: $LIBCLANG_PATH"
+          cargo tauri build --target x86_64-unknown-linux-gnu
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
@@ -100,9 +104,12 @@ jobs:
       - name: Install macOS system dependencies
         run: brew install hunspell llvm
 
-      - name: Fix libclang symlink (macOS)
+      - name: Locate libclang (macOS)
         run: |
           LLVM_LIB_DIR="$(brew --prefix llvm)/lib"
+          echo "LLVM_LIB_DIR: $LLVM_LIB_DIR"
+          ls -l "$LLVM_LIB_DIR/libclang.dylib"
+          # Symlink to /usr/local/lib which is usually searched by dyld
           sudo mkdir -p /usr/local/lib
           sudo ln -sf "$LLVM_LIB_DIR/libclang.dylib" /usr/local/lib/libclang.dylib
 
@@ -126,6 +133,12 @@ jobs:
         working-directory: src-tauri
         run: |
           export SDKROOT=$(xcrun --show-sdk-path)
+          export LIBCLANG_PATH="$(brew --prefix llvm)/lib"
+          export DYLD_LIBRARY_PATH="$(brew --prefix llvm)/lib"
+          export APPLE_CERTIFICATE="${{ secrets.APPLE_CERTIFICATE }}"
+          export APPLE_CERTIFICATE_PASSWORD="${{ secrets.APPLE_CERTIFICATE_PASSWORD }}"
+          echo "LIBCLANG_PATH: $LIBCLANG_PATH"
+          ls -la "$LIBCLANG_PATH" | head -20
           cargo tauri build --target x86_64-apple-darwin
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
@@ -135,8 +148,6 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          LIBCLANG_PATH: /usr/local/opt/llvm/lib
-          DYLD_LIBRARY_PATH: /usr/local/opt/llvm/lib
 
       - name: Stage bundles
         run: |
@@ -162,9 +173,12 @@ jobs:
       - name: Install macOS system dependencies
         run: brew install hunspell llvm
 
-      - name: Fix libclang symlink (macOS)
+      - name: Locate libclang (macOS)
         run: |
           LLVM_LIB_DIR="$(brew --prefix llvm)/lib"
+          echo "LLVM_LIB_DIR: $LLVM_LIB_DIR"
+          ls -l "$LLVM_LIB_DIR/libclang.dylib"
+          # Symlink to /usr/local/lib which is usually searched by dyld
           sudo mkdir -p /usr/local/lib
           sudo ln -sf "$LLVM_LIB_DIR/libclang.dylib" /usr/local/lib/libclang.dylib
 
@@ -188,6 +202,12 @@ jobs:
         working-directory: src-tauri
         run: |
           export SDKROOT=$(xcrun --show-sdk-path)
+          export LIBCLANG_PATH="$(brew --prefix llvm)/lib"
+          export DYLD_LIBRARY_PATH="$(brew --prefix llvm)/lib"
+          export APPLE_CERTIFICATE="${{ secrets.APPLE_CERTIFICATE }}"
+          export APPLE_CERTIFICATE_PASSWORD="${{ secrets.APPLE_CERTIFICATE_PASSWORD }}"
+          echo "LIBCLANG_PATH: $LIBCLANG_PATH"
+          ls -la "$LIBCLANG_PATH" | head -20
           cargo tauri build --target aarch64-apple-darwin
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
@@ -197,8 +217,6 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          LIBCLANG_PATH: /opt/homebrew/opt/llvm/lib
-          DYLD_LIBRARY_PATH: /opt/homebrew/opt/llvm/lib
 
       - name: Stage bundles
         run: |
@@ -321,7 +339,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.version }}
-          name: "Lotion ${{ steps.tag.outputs.version }}"
+          name: "lotion-rs ${{ steps.tag.outputs.version }}"
           body_path: CHANGELOG_RELEASE.md
           draft: false
           prerelease: ${{ contains(steps.tag.outputs.version, '-') }}

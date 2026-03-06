@@ -250,16 +250,23 @@ impl TabController {
                     }};
 
                     const closeBtn = createBtn('#ff5f56', () => {{
-                        window.location.href = 'lotion-action://window:close';
+                        if (window.__TAURI__) {{
+                            window.__TAURI__.invoke('close_window', {{ windowId: '${window_id}' }});
+                        }}
                     }});
 
                     const minBtn = createBtn('#ffbd2e', () => {{
-                        window.location.href = 'lotion-action://window:minimize';
+                        if (window.__TAURI__) {{
+                            window.__TAURI__.invoke('minimize_window', {{ windowId: '${window_id}' }});
+                        }}
                     }});
 
                     const maxBtn = createBtn('#27c93f', () => {{
-                        window.location.href = 'lotion-action://window:maximize';
+                        if (window.__TAURI__) {{
+                            window.__TAURI__.invoke('maximize_window', {{ windowId: '${window_id}' }});
+                        }}
                     }});
+
 
                     btnContainer.appendChild(closeBtn);
                     btnContainer.appendChild(minBtn);
