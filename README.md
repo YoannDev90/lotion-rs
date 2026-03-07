@@ -103,17 +103,15 @@ What that means in practice for Lotion-rs:
 
 ## Installation
 
-### Pre-built Packages
+### 📦 Download Pre-built Packages
 
-Download the latest release from the [Releases](../../releases) page:
+You can download the latest version for your platform here:
 
-| Platform | Package |
-|---|---|
-| Ubuntu / Debian | `.deb` |
-| Fedora / RHEL | `.rpm` |
-| Any Linux (x86_64) | `.AppImage` |
-| macOS (Intel) | `.dmg` (x86_64) |
-| macOS (Apple Silicon) | `.dmg` (aarch64) |
+- [🐧 Linux (.deb)](https://github.com/diegoakanotoperator/lotion-rs/releases/latest/download/lotion-rs_amd64.deb)
+- [🐧 Linux (.AppImage)](https://github.com/diegoakanotoperator/lotion-rs/releases/latest/download/lotion-rs.AppImage)
+- [🐧 Linux (.rpm)](https://github.com/diegoakanotoperator/lotion-rs/releases/latest/download/lotion-rs.rpm)
+- [🍎 macOS Intel (x64 .dmg)](https://github.com/diegoakanotoperator/lotion-rs/releases/latest/download/lotion-rs-x64.dmg)
+- [🍎 macOS Silicon (arm64 .dmg)](https://github.com/diegoakanotoperator/lotion-rs/releases/latest/download/lotion-rs-arm64.dmg)
 
 ### Debian / Ubuntu
 
@@ -241,7 +239,7 @@ The project uses GitHub Actions to build and release on every tagged version (`v
 - macOS x86_64 → `.dmg`
 - macOS aarch64 (Apple Silicon) → `.dmg`
 
-See [`.github/workflows/build-and-release.yml`](.github/workflows/build-and-release.yml) for the full pipeline definition.
+See [`.github/workflows/release.yml`](.github/workflows/release.yml) for the full pipeline definition.
 
 ---
 
