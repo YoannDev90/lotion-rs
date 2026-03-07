@@ -4,8 +4,10 @@
 This release focuses on hardening the application's security posture by addressing several vulnerabilities identified during the security audit. We have implemented strict Zero-Trust policies for URL navigation, window creation, and locale management.
 
 ## Security Improvements
-- **Full Namespace Isolation (Linux)**: The main process now enforces strict OS-level isolation using Mount, UTS, IPC, PID, and Network namespaces (LiteBox v2).
-- **Secure Automated Updates**: Integrated the Tauri v2 updater with cryptographic signature verification (Minisign). Updates are now delivered via a secure GitHub-based channel.
+- **Full Namespace Isolation (Linux)**: Implemented robust process isolation using Mount, UTS, IPC, PID, and Network namespaces via `unshare(2)`.
+- **Windows LiteBox Hardening**: Added Windows Job Object restrictions to limit UI interactions (Desktop/System Parameters) and prevent unauthorized process spawning.
+- **Tauri v2 Updater Integration**: Cryptographically signed updates are now fully operational, ensuring secure, automated delivery of new versions.
+- **Zero-Trust WebViews**: All internal and popup windows now strictly enforce navigation and new-window policies.
 - **Improved Security Defaults**: Updated application identifier and ensured all cryptographic keys use modern standards (non-Base64 raw keys where applicable).
 - **Locale Sanitization**: Implemented strict input validation for the i18n manager to prevent path traversal attacks.
 - **GitHub Actions Hardening**: Updated CI/CD workflows with explicit least-privilege permissions (`contents: read`).
