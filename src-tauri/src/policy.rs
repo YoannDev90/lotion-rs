@@ -29,6 +29,13 @@ impl PolicyManager {
             .iter()
             .any(|domain| host == domain || host.ends_with(&format!(".{}", domain)))
     }
+
+    fn is_trusted_oauth(&self, host: &str) -> bool {
+        let trusted = ["accounts.google.com", "appleid.apple.com"];
+        trusted
+            .iter()
+            .any(|t| host == *t || host.ends_with(&format!(".{}", t)))
+    }
 }
 
 impl PolicyEnforcer for PolicyManager {
@@ -47,10 +54,7 @@ impl PolicyEnforcer for PolicyManager {
                     return true;
                 }
 
-                // Allow Google and Apple login navigation during OAuth flow
-                if (host == "accounts.google.com" || host.ends_with(".accounts.google.com"))
-                    || (host == "appleid.apple.com" || host.ends_with(".appleid.apple.com"))
-                {
+                if self.is_trusted_oauth(host) {
                     log::debug!("PolicyManager: ALLOWED OAuth provider: {}", host);
                     return true;
                 }
@@ -79,11 +83,16 @@ impl PolicyEnforcer for PolicyManager {
         if let Ok(parsed_url) = url::Url::parse(url) {
             // Block known tracker and telemetry domains from jumping out to the browser
             if let Some(host) = parsed_url.host_str() {
-                if host.contains("googletagmanager.com")
-                    || host.contains("google-analytics.com")
-                    || host.contains("amplitude.com")
-                    || host.contains("mixpanel.com")
-                    || host.contains("segment.com")
+                let trackers = [
+                    "googletagmanager.com",
+                    "google-analytics.com",
+                    "amplitude.com",
+                    "mixpanel.com",
+                    "segment.com",
+                ];
+                if trackers
+                    .iter()
+                    .any(|t| host == *t || host.ends_with(&format!(".{}", t)))
                 {
                     log::warn!("PolicyManager: BLOCKED tracker/telemetry domain: {}", host);
                     return false;
@@ -110,11 +119,7 @@ impl PolicyEnforcer for PolicyManager {
         if let Ok(parsed_url) = url::Url::parse(url) {
             if let Some(host) = parsed_url.host_str() {
                 // If it's an official Notion domain or OAuth provider, keep it in the app
-                if self.is_official_notion(host)
-                    || (host == "accounts.google.com" || host.ends_with(".accounts.google.com"))
-                    || (host == "appleid.apple.com" || host.ends_with(".appleid.apple.com"))
-                    || (host == "apple.com" || host.ends_with(".apple.com"))
-                {
+                if self.is_official_notion(host) || self.is_trusted_oauth(host) {
                     return false;
                 }
             }
@@ -208,5 +213,14 @@ mod tests {
         // Block trackers/analytics even for external clicks
         assert!(!policy.validate_external_link("https://www.googletagmanager.com/gtm.js"));
         assert!(!policy.validate_external_link("https://www.google-analytics.com/collect"));
+    }
+
+    #[test]
+    fn test_suffix_attacks() {
+        let policy = PolicyManager::new();
+        // POC: evilnotion.so should NOT match notion.so
+        assert!(!policy.validate_url("https://evilnotion.so"));
+        assert!(!policy.validate_url("https://accounts.google.com.evil.com"));
+        assert!(!policy.validate_url("https://appleid.apple.com.attacker.com"));
     }
 }
