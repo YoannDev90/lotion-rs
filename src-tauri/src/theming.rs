@@ -1,7 +1,7 @@
 use crate::traits::ThemingEngine;
 use std::path::PathBuf;
 use std::sync::RwLock;
-use tauri::Webview;
+use tauri::{Runtime, Webview};
 
 pub struct ThemeManager {
     active_theme: RwLock<String>,
@@ -64,7 +64,7 @@ impl ThemeManager {
     }
 }
 
-impl ThemingEngine for ThemeManager {
+impl<R: Runtime> ThemingEngine<R> for ThemeManager {
     fn get_theme_css(&self, theme_name: &str) -> String {
         let vars = self.generate_notion_variables(theme_name);
         if vars.is_empty() {
@@ -102,13 +102,13 @@ impl ThemingEngine for ThemeManager {
         "".to_string()
     }
 
-    fn inject_theme(&self, webview: &Webview, theme_name: &str) {
-        let js = self.get_theme_css(theme_name);
+    fn inject_theme(&self, webview: &Webview<R>, theme_name: &str) {
+        let js = <Self as ThemingEngine<R>>::get_theme_css(self, theme_name);
         if !js.is_empty() {
             let _ = webview.eval(&js);
         }
         // Also inject custom CSS if present
-        let custom = self.get_custom_css();
+        let custom = <Self as ThemingEngine<R>>::get_custom_css(self);
         if !custom.is_empty() {
             let _ = webview.eval(&custom);
         }

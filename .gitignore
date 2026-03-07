@@ -6,6 +6,8 @@ out
 official_notion
 docs
 dist-tauri
+notion_*/
+original/
 
 # AUR build artifacts
 *.pkg.tar.zst
@@ -25,3 +27,8 @@ src-tauri/gen/
 src-tauri/lib/
 src-tauri/target/
 tmp/
+
+# Security
+*.key
+src-tauri/lotion-rs-signer.key
+lotion-rs-signer.key

@@ -1,4 +1,4 @@
-use tauri::AppHandle;
+use tauri::{AppHandle, Runtime};
 
 /// Interface for security sandboxing
 pub trait SecuritySandbox: Send + Sync {
@@ -7,22 +7,22 @@ pub trait SecuritySandbox: Send + Sync {
 }
 
 /// Interface for tab navigation and orchestration
-pub trait TabOrchestrator: Send + Sync {
-    fn create_tab(&self, app: &AppHandle, window_id: &str, url: &str) -> tauri::Result<String>;
+pub trait TabOrchestrator<R: Runtime>: Send + Sync {
+    fn create_tab(&self, app: &AppHandle<R>, window_id: &str, url: &str) -> tauri::Result<String>;
     fn destroy_tab(&self, tab_id: &str) -> tauri::Result<()>;
     fn show_tab(&self, tab_id: &str) -> tauri::Result<()>;
     fn get_tab_ids(&self) -> Vec<String>;
     fn inject_theme_into_tab(
         &self,
-        app: &AppHandle,
+        app: &AppHandle<R>,
         tab_id: &str,
         theme_name: &str,
     ) -> tauri::Result<()>;
 }
 
 /// Interface for window management
-pub trait WindowProvider: Send + Sync {
-    fn create_main_window(&self, app: &AppHandle) -> tauri::Result<()>;
+pub trait WindowProvider<R: Runtime>: Send + Sync {
+    fn create_main_window(&self, app: &AppHandle<R>) -> tauri::Result<()>;
 }
 
 /// Interface for enforcing Zero-Trust Manifesto policies
@@ -38,13 +38,13 @@ pub trait PolicyEnforcer: Send + Sync {
 }
 
 /// Interface for the CSS/JS Theming Engine
-pub trait ThemingEngine: Send + Sync {
+pub trait ThemingEngine<R: Runtime>: Send + Sync {
     /// Returns the CSS string to be injected for a given theme name
     fn get_theme_css(&self, theme_name: &str) -> String;
     /// Returns the CSS to apply custom user overrides
     fn get_custom_css(&self) -> String;
     /// Injects the current theme into a webview
-    fn inject_theme(&self, webview: &tauri::Webview, theme_name: &str);
+    fn inject_theme(&self, webview: &tauri::Webview<R>, theme_name: &str);
     /// Set the active theme at runtime
     fn set_active_theme(&self, name: &str);
     /// Get the currently active theme name

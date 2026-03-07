@@ -3,10 +3,10 @@ use crate::tab_controller::TabController;
 use crate::traits::TabOrchestrator;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Manager, Runtime};
 
-impl TabOrchestrator for TabManager {
-    fn create_tab(&self, app: &AppHandle, window_id: &str, url: &str) -> tauri::Result<String> {
+impl<R: Runtime> TabOrchestrator<R> for TabManager<R> {
+    fn create_tab(&self, app: &AppHandle<R>, window_id: &str, url: &str) -> tauri::Result<String> {
         self.create_tab(app, window_id, url)
     }
 
@@ -40,7 +40,7 @@ impl TabOrchestrator for TabManager {
 
     fn inject_theme_into_tab(
         &self,
-        app: &AppHandle,
+        app: &AppHandle<R>,
         tab_id: &str,
         theme_name: &str,
     ) -> tauri::Result<()> {
@@ -50,19 +50,19 @@ impl TabOrchestrator for TabManager {
             .expect("TabManager: tabs read lock poisoned")
             .get(tab_id)
         {
-            let theming = app.state::<Arc<dyn crate::traits::ThemingEngine>>();
+            let theming = app.state::<Arc<dyn crate::traits::ThemingEngine<R>>>();
             theming.inject_theme(&tab.webview, theme_name);
         }
         Ok(())
     }
 }
 
-pub struct TabManager {
-    pub tabs: RwLock<HashMap<String, Arc<TabController>>>,
+pub struct TabManager<R: Runtime> {
+    pub tabs: RwLock<HashMap<String, Arc<TabController<R>>>>,
     pub litebox: Arc<LiteBox>,
 }
 
-impl TabManager {
+impl<R: Runtime> TabManager<R> {
     pub fn new(litebox: Arc<LiteBox>) -> Self {
         Self {
             tabs: RwLock::new(HashMap::new()),
@@ -70,7 +70,7 @@ impl TabManager {
         }
     }
 
-    pub fn create_tab(&self, app: &AppHandle, window_id: &str, url: &str) -> tauri::Result<String> {
+    pub fn create_tab(&self, app: &AppHandle<R>, window_id: &str, url: &str) -> tauri::Result<String> {
         let tab_id = uuid::Uuid::new_v4().to_string();
 
         let tab_controller =

@@ -26,15 +26,7 @@ impl I18nManager {
     pub fn load_locale(&self, app: &AppHandle, locale: &str) {
         // Strict sanitization: restrict to ASCII alphanumeric, hyphens, and underscores.
         // Explicitly reject any path separators, parent directory references, or excessive lengths.
-        if locale.is_empty()
-            || locale.len() > 16
-            || locale.contains("..")
-            || locale.contains('/')
-            || locale.contains('\\')
-            || !locale
-                .chars()
-                .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
-        {
+        if !validate_locale(locale) {
             log::warn!(
                 "I18nManager: BLOCKED attempt to load invalid locale string: '{}'",
                 locale
@@ -88,6 +80,17 @@ impl I18nManager {
     }
 }
 
+/// Validates that a locale string is safe and well-formed.
+/// Restricts to ASCII alphanumeric, hyphens, and underscores, and limits length.
+fn validate_locale(locale: &str) -> bool {
+    if locale.is_empty() || locale.len() > 16 {
+        return false;
+    }
+    locale
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+}
+
 #[tauri::command]
 pub fn get_translation(key: String, state: State<'_, I18nManager>) -> String {
     state.get(&key)
@@ -97,3 +100,23 @@ pub fn get_translation(key: String, state: State<'_, I18nManager>) -> String {
 pub fn set_locale(locale: String, app: AppHandle, state: State<'_, I18nManager>) {
     state.load_locale(&app, &locale);
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_validate_locale() {
+        assert!(validate_locale("en-US"));
+        assert!(validate_locale("pt_BR"));
+        assert!(validate_locale("fr"));
+        
+        assert!(!validate_locale(""));
+        assert!(!validate_locale("this-locale-is-too-long-for-sanitization"));
+        assert!(!validate_locale("../../../tmp"));
+        assert!(!validate_locale("en/US"));
+        assert!(!validate_locale("en\\US"));
+        assert!(!validate_locale("en;rm -rf /"));
+    }
+}
+
