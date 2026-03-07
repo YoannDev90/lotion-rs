@@ -44,6 +44,44 @@ The original Lotion solved this brilliantly using Electron. But Electron carries
 - A large memory footprint
 - No memory-safe systems layer
 
+## Installation
+
+### 📦 Download Pre-built Packages
+
+You can download the latest version for your platform here:
+
+- [🐧 Linux (.deb)](https://github.com/diegoakanotoperator/lotion-rs/releases/latest/download/lotion-rs_amd64.deb)
+- [🐧 Linux (.AppImage)](https://github.com/diegoakanotoperator/lotion-rs/releases/latest/download/lotion-rs.AppImage)
+- [🐧 Linux (.rpm)](https://github.com/diegoakanotoperator/lotion-rs/releases/latest/download/lotion-rs.rpm)
+- [🍎 macOS Intel (x64 .dmg)](https://github.com/diegoakanotoperator/lotion-rs/releases/latest/download/lotion-rs-x64.dmg)
+- [🍎 macOS Silicon (arm64 .dmg)](https://github.com/diegoakanotoperator/lotion-rs/releases/latest/download/lotion-rs-arm64.dmg)
+- [🪟 Windows (x64 .exe)](https://github.com/diegoakanotoperator/lotion-rs/releases/latest/download/lotion-rs-setup.exe)
+
+### Debian / Ubuntu
+
+```bash
+sudo dpkg -i lotion_*.deb
+```
+
+### Fedora / RHEL
+
+```bash
+sudo rpm -i lotion-*.rpm
+```
+
+### AppImage (any Linux)
+
+```bash
+chmod +x Lotion_*.AppImage
+./Lotion_*.AppImage
+```
+
+### Windows
+
+Download and run the `lotion-rs-setup.exe` installer.
+
+---
+
 Lotion-rs keeps everything that made Lotion great and rebuilds the foundation in Rust:
 
 | | Original Lotion | Lotion-rs |
@@ -101,43 +139,7 @@ What that means in practice for Lotion-rs:
 
 ---
 
-## Installation
 
-### 📦 Download Pre-built Packages
-
-You can download the latest version for your platform here:
-
-- [🐧 Linux (.deb)](https://github.com/diegoakanotoperator/lotion-rs/releases/latest/download/lotion-rs_amd64.deb)
-- [🐧 Linux (.AppImage)](https://github.com/diegoakanotoperator/lotion-rs/releases/latest/download/lotion-rs.AppImage)
-- [🐧 Linux (.rpm)](https://github.com/diegoakanotoperator/lotion-rs/releases/latest/download/lotion-rs.rpm)
-- [🍎 macOS Intel (x64 .dmg)](https://github.com/diegoakanotoperator/lotion-rs/releases/latest/download/lotion-rs-x64.dmg)
-- [🍎 macOS Silicon (arm64 .dmg)](https://github.com/diegoakanotoperator/lotion-rs/releases/latest/download/lotion-rs-arm64.dmg)
-- [🪟 Windows (x64 .exe)](https://github.com/diegoakanotoperator/lotion-rs/releases/latest/download/lotion-rs-setup.exe)
-
-### Debian / Ubuntu
-
-```bash
-sudo dpkg -i lotion_*.deb
-```
-
-### Fedora / RHEL
-
-```bash
-sudo rpm -i lotion-*.rpm
-```
-
-### AppImage (any Linux)
-
-```bash
-chmod +x Lotion_*.AppImage
-./Lotion_*.AppImage
-```
-
-### Windows
-
-Download and run the `lotion-rs-setup.exe` installer.
-
----
 
 ## Building from Source
 
