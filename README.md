@@ -112,6 +112,7 @@ You can download the latest version for your platform here:
 - [🐧 Linux (.rpm)](https://github.com/diegoakanotoperator/lotion-rs/releases/latest/download/lotion-rs.rpm)
 - [🍎 macOS Intel (x64 .dmg)](https://github.com/diegoakanotoperator/lotion-rs/releases/latest/download/lotion-rs-x64.dmg)
 - [🍎 macOS Silicon (arm64 .dmg)](https://github.com/diegoakanotoperator/lotion-rs/releases/latest/download/lotion-rs-arm64.dmg)
+- [🪟 Windows (x64 .exe)](https://github.com/diegoakanotoperator/lotion-rs/releases/latest/download/lotion-rs-setup.exe)
 
 ### Debian / Ubuntu
 
@@ -132,6 +133,10 @@ chmod +x Lotion_*.AppImage
 ./Lotion_*.AppImage
 ```
 
+### Windows
+
+Download and run the `lotion-rs-setup.exe` installer.
+
 ---
 
 ## Building from Source
@@ -150,6 +155,10 @@ sudo apt-get install -y \
 
 **macOS:**  
 Xcode Command Line Tools are sufficient. No extra dependencies required.
+
+**Windows:**
+- [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
+- [vcpkg](https://vcpkg.io/) (for `hunspell`)
 
 **All platforms:**
 ```bash
@@ -238,6 +247,7 @@ The project uses GitHub Actions to build and release on every tagged version (`v
 - Linux x86_64 → `.deb`, `.rpm`, `.AppImage`
 - macOS x86_64 → `.dmg`
 - macOS aarch64 (Apple Silicon) → `.dmg`
+- Windows x86_64 → `.exe` (NSIS)
 
 See [`.github/workflows/release.yml`](.github/workflows/release.yml) for the full pipeline definition.
 

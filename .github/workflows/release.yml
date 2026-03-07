@@ -231,12 +231,61 @@ jobs:
           path: staging/
           if-no-files-found: error
 
+  build-windows:
+    name: Build — Windows x86_64
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Windows system dependencies
+        run: |
+          vcpkg install hunspell:x64-windows-static-md
+          echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: rel-windows-x86_64-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: rel-windows-x86_64-
+
+      - uses: cargo-bins/cargo-binstall@main
+      - run: cargo binstall --no-confirm tauri-cli@^2
+
+      - name: Build bundles
+        working-directory: src-tauri
+        run: |
+          cargo tauri build --target x86_64-pc-windows-msvc
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+
+      - name: Stage bundles
+        shell: bash
+        run: |
+          mkdir -p staging
+          find src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis -name "*.exe" -exec cp {} staging/lotion-rs-setup.exe \;
+          ls -lh staging/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bundles-windows-x86_64
+          path: staging/
+          if-no-files-found: error
+
   # ────────────────────────────────────────────────────────────────
   # 2. Generate CHANGELOG and publish the GitHub Release
   # ────────────────────────────────────────────────────────────────
   release:
     name: Publish GitHub Release
-    needs: [build-linux, build-macos-x64, build-macos-arm64]
+    needs: [build-linux, build-macos-x64, build-macos-arm64, build-windows]
     runs-on: ubuntu-latest
 
     steps:
@@ -312,6 +361,7 @@ jobs:
           echo "| Any Linux (portable) | \`.AppImage\` |" >> CHANGELOG_RELEASE.md
           echo "| macOS (Intel) | \`.dmg\` (x86_64) |" >> CHANGELOG_RELEASE.md
           echo "| macOS (Apple Silicon) | \`.dmg\` (aarch64) |" >> CHANGELOG_RELEASE.md
+          echo "| Windows | \`.exe\` (x64) |" >> CHANGELOG_RELEASE.md
           echo "" >> CHANGELOG_RELEASE.md
           echo "> ⚠️ This is an unofficial Notion client. Not affiliated with or endorsed by Notion Labs, Inc." >> CHANGELOG_RELEASE.md
 
