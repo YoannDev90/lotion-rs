@@ -2,17 +2,17 @@ use crate::litebox::LiteBox;
 use crate::traits::{PolicyEnforcer, ThemingEngine};
 use std::sync::Arc;
 use tauri::webview::Webview;
-use tauri::{AppHandle, Manager, Url, WebviewBuilder, WebviewUrl};
+use tauri::{AppHandle, Manager, Runtime, Url, WebviewBuilder, WebviewUrl};
 
-pub struct TabController {
+pub struct TabController<R: Runtime> {
     pub tab_id: String,
     pub window_id: String,
-    pub webview: Webview,
+    pub webview: Webview<R>,
 }
 
-impl TabController {
+impl<R: Runtime> TabController<R> {
     pub fn new(
-        app: &AppHandle,
+        app: &AppHandle<R>,
         window_id: &str,
         tab_id: String,
         url_str: &str,
@@ -53,7 +53,7 @@ impl TabController {
         log::info!("Created tab webview: {} in window: {}", tab_id, window_id);
 
         // Inject theme from config (not hardcoded)
-        let theming = app.state::<Arc<dyn ThemingEngine>>();
+        let theming = app.state::<Arc<dyn ThemingEngine<R>>>();
         let active_theme = theming.get_active_theme();
         theming.inject_theme(&webview, &active_theme);
 
@@ -338,7 +338,7 @@ impl TabController {
 /// Guaranteeing that any nested popups (e.g. nested OAuth flows) inherit
 /// the exact same zero-trust `on_navigation` and `on_new_window` policies
 /// as their parent window via the TabController factory.
-pub fn spawn_secure_popup(app: &AppHandle, _policy: Arc<dyn PolicyEnforcer>, url: Url) {
+pub fn spawn_secure_popup<R: Runtime>(app: &AppHandle<R>, _policy: Arc<dyn PolicyEnforcer>, url: Url) {
     log::info!(
         "Intercepted popup request. Routing into a secure in-app tab: {}",
         url.as_str()
@@ -348,7 +348,7 @@ pub fn spawn_secure_popup(app: &AppHandle, _policy: Arc<dyn PolicyEnforcer>, url
     // into our managed TabOrchestrator. This keeps the application bounded strictly
     // to a single window and enforces all Zero-Trust policies recursively since
     // create_tab() uses the TabController factory.
-    if let Some(orchestrator) = app.try_state::<Arc<dyn crate::traits::TabOrchestrator>>() {
+    if let Some(orchestrator) = app.try_state::<Arc<dyn crate::traits::TabOrchestrator<R>>>() {
         if let Err(e) = orchestrator.inner().create_tab(app, "main", url.as_str()) {
             log::error!("Zero-Trust: Failed to route popup into managed tab: {}", e);
         }
@@ -359,14 +359,14 @@ pub fn spawn_secure_popup(app: &AppHandle, _policy: Arc<dyn PolicyEnforcer>, url
 
 /// A centralized factory for creating WebviewBuilders with guaranteed security listeners.
 /// Ensures all created webviews (tabs or popups) enforce on_navigation and on_new_window policies.
-pub fn create_secure_webview_builder(
-    app: &AppHandle,
+pub fn create_secure_webview_builder<R: Runtime>(
+    app: &AppHandle<R>,
     label: &str,
     url: &Url,
     window_id: &str,
     policy: Arc<dyn PolicyEnforcer>,
-) -> WebviewBuilder {
-    let mut webview_builder = WebviewBuilder::new(label, WebviewUrl::External(url.clone()));
+) -> WebviewBuilder<R> {
+    let webview_builder = WebviewBuilder::new(label, WebviewUrl::External(url.clone()));
 
     let nav_app = app.clone();
     let nav_policy = policy.clone();
@@ -402,7 +402,7 @@ pub fn create_secure_webview_builder(
                         "tab:new" => {
                             let notion_url = "https://www.notion.so";
                             if let Some(orchestrator) =
-                                nav_app.try_state::<Arc<dyn crate::traits::TabOrchestrator>>()
+                                nav_app.try_state::<Arc<dyn crate::traits::TabOrchestrator<R>>>()
                             {
                                 if let Ok(new_id) =
                                     orchestrator.inner().create_tab(&nav_app, window_id, notion_url)

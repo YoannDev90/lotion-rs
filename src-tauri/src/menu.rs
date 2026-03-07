@@ -1,10 +1,10 @@
 use std::sync::Arc;
 use tauri::{
     menu::{AboutMetadata, MenuBuilder, MenuItem, SubmenuBuilder},
-    AppHandle, Manager,
+    AppHandle, Manager, Runtime,
 };
 
-pub fn create_main_menu(app: &AppHandle) -> tauri::Result<()> {
+pub fn create_main_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
     let pkg_info = app.package_info();
 
     // lotion-rs Menu
@@ -160,12 +160,12 @@ pub fn create_main_menu(app: &AppHandle) -> tauri::Result<()> {
 
                 // Retrieve state manually to avoid borrowing issues
                 if let Some(theming) =
-                    app_handle.try_state::<Arc<dyn crate::traits::ThemingEngine>>()
+                    app_handle.try_state::<Arc<dyn crate::traits::ThemingEngine<R>>>()
                 {
                     theming.set_active_theme(&theme_name);
 
                     if let Some(orchestrator) =
-                        app_handle.try_state::<Arc<dyn crate::traits::TabOrchestrator>>()
+                        app_handle.try_state::<Arc<dyn crate::traits::TabOrchestrator<R>>>()
                     {
                         let tab_ids = orchestrator.get_tab_ids();
                         for tab_id in tab_ids {

@@ -1,3 +1,4 @@
+#![cfg(target_os = "linux")]
 //! Linux-specific LiteBox implementations using namespaces and seccomp.
 //! Note: Tauri/WebKitGTK relies on bwrap internally when the sandbox is enabled,
 //! but this provides defense-in-depth resource dropping for the main process.

@@ -30,7 +30,7 @@ fn get_window_tabs(
 #[tauri::command]
 fn switch_tab(
     tab_id: String,
-    orchestrator: tauri::State<'_, Arc<dyn lotion_rs::traits::TabOrchestrator>>,
+    orchestrator: tauri::State<'_, Arc<dyn lotion_rs::traits::TabOrchestrator<tauri::Wry>>>,
 ) {
     let _ = orchestrator.show_tab(&tab_id);
 }
@@ -39,7 +39,7 @@ fn switch_tab(
 fn close_tab(
     tab_id: String,
     _app: tauri::AppHandle,
-    orchestrator: tauri::State<'_, Arc<dyn lotion_rs::traits::TabOrchestrator>>,
+    orchestrator: tauri::State<'_, Arc<dyn lotion_rs::traits::TabOrchestrator<tauri::Wry>>>,
     state: tauri::State<'_, Arc<tokio::sync::Mutex<AppState>>>,
 ) {
     let _ = orchestrator.destroy_tab(&tab_id);
@@ -62,7 +62,7 @@ fn close_tab(
 fn new_tab(
     window_id: String,
     app: tauri::AppHandle,
-    orchestrator: tauri::State<'_, Arc<dyn lotion_rs::traits::TabOrchestrator>>,
+    orchestrator: tauri::State<'_, Arc<dyn lotion_rs::traits::TabOrchestrator<tauri::Wry>>>,
     state: tauri::State<'_, Arc<tokio::sync::Mutex<AppState>>>,
 ) {
     let notion_url = "https://www.notion.so";
@@ -182,7 +182,7 @@ fn main() {
         &config.active_theme,
         config.custom_css_path.clone(),
     ));
-    let tab_manager = Arc::new(lotion_rs::tab_manager::TabManager::new(
+    let tab_manager = Arc::new(lotion_rs::tab_manager::TabManager::<tauri::Wry>::new(
         security.litebox.clone(),
     ));
 
@@ -215,8 +215,8 @@ fn main() {
             // Initialize modules in Tauri state FIRST as trait objects where expected
             app.manage::<Arc<dyn lotion_rs::traits::SecuritySandbox>>(security.litebox.clone());
             app.manage::<Arc<dyn lotion_rs::traits::PolicyEnforcer>>(policy);
-            app.manage::<Arc<dyn lotion_rs::traits::ThemingEngine>>(theming);
-            app.manage::<Arc<dyn lotion_rs::traits::TabOrchestrator>>(tab_manager);
+            app.manage::<Arc<dyn lotion_rs::traits::ThemingEngine<tauri::Wry>>>(theming);
+            app.manage::<Arc<dyn lotion_rs::traits::TabOrchestrator<tauri::Wry>>>(tab_manager);
             app.manage(config);
             app.manage(app_state);
             app.manage(I18nManager::new());
@@ -233,7 +233,7 @@ fn main() {
                 .clone();
 
             // Spawn the main window directly via Tauri WindowController
-            match lotion_rs::window_controller::WindowController::new(&handle, security_state) {
+            match lotion_rs::window_controller::WindowController::<tauri::Wry>::new(&handle, security_state) {
                 Ok(wc) => {
                     wc.setup_listeners(handle.clone());
                     if let Err(e) = wc.setup_tabs(&handle) {

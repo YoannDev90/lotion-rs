@@ -1,14 +1,14 @@
 use crate::traits::{SecuritySandbox, TabOrchestrator};
 use std::sync::Arc;
-use tauri::{AppHandle, Manager, Window, WindowBuilder};
+use tauri::{AppHandle, Manager, Runtime, Window, WindowBuilder};
 
-pub struct WindowController {
-    pub window: Window,
+pub struct WindowController<R: Runtime> {
+    pub window: Window<R>,
     pub security: Arc<dyn SecuritySandbox>,
 }
 
-impl WindowController {
-    pub fn new(app: &AppHandle, security: Arc<dyn SecuritySandbox>) -> tauri::Result<Self> {
+impl<R: Runtime> WindowController<R> {
+    pub fn new(app: &AppHandle<R>, security: Arc<dyn SecuritySandbox>) -> tauri::Result<Self> {
         let window = WindowBuilder::new(app, "main")
             .title("lotion-rs")
             .inner_size(1200.0, 768.0)
@@ -43,7 +43,7 @@ impl WindowController {
         Ok(Self { window, security })
     }
 
-    pub fn setup_listeners(&self, app_handle: AppHandle) {
+    pub fn setup_listeners(&self, app_handle: AppHandle<R>) {
         let window_label = self.window.label().to_string();
 
         self.window.on_window_event(move |event| match event {
@@ -96,11 +96,11 @@ impl WindowController {
         });
     }
 
-    pub fn setup_tabs(&self, app: &AppHandle) -> tauri::Result<()> {
+    pub fn setup_tabs(&self, app: &AppHandle<R>) -> tauri::Result<()> {
         let tab_manager = {
             let mut attempts = 0;
             loop {
-                if let Some(state) = app.try_state::<Arc<dyn TabOrchestrator>>() {
+                if let Some(state) = app.try_state::<Arc<dyn TabOrchestrator<R>>>() {
                     break state;
                 }
                 attempts += 1;
