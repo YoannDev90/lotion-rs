@@ -59,6 +59,25 @@ fn close_tab(
 }
 
 #[tauri::command]
+fn new_tab(
+    window_id: String,
+    app: tauri::AppHandle,
+    orchestrator: tauri::State<'_, Arc<dyn lotion_rs::traits::TabOrchestrator>>,
+    state: tauri::State<'_, Arc<tokio::sync::Mutex<AppState>>>,
+) {
+    let notion_url = "https://www.notion.so";
+    if let Ok(new_id) = orchestrator.create_tab(&app, &window_id, notion_url) {
+        let _ = orchestrator.show_tab(&new_id);
+
+        let mut app_state = state.blocking_lock();
+        if let Some(w_state) = app_state.windows.get_mut(&window_id) {
+            w_state.tab_ids.push(new_id);
+            let _ = app_state.save_to_disk();
+        }
+    }
+}
+
+#[tauri::command]
 fn update_tab_state(
     tab_id: String,
     title: String,
@@ -126,13 +145,16 @@ fn log_network_event(event: String) {
 }
 
 fn main() {
-    std::env::set_var("NO_AT_BRIDGE", "1");
-    std::env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
-    std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
-    std::env::set_var("WEBKIT_USE_SINGLE_WEB_PROCESS", "1");
-    std::env::set_var("WEBKIT_DISABLE_ACCESSIBILITY", "1");
-    std::env::set_var("GTK_A11Y", "none");
-    std::env::set_var("GIO_USE_VFS", "local");
+    #[cfg(target_os = "linux")]
+    {
+        std::env::set_var("NO_AT_BRIDGE", "1");
+        std::env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
+        std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+        std::env::set_var("WEBKIT_USE_SINGLE_WEB_PROCESS", "1");
+        std::env::set_var("WEBKIT_DISABLE_ACCESSIBILITY", "1");
+        std::env::set_var("GTK_A11Y", "none");
+        std::env::set_var("GIO_USE_VFS", "local");
+    }
 
     // Set RUST_LOG only if not already set by the user
     if std::env::var("RUST_LOG").is_err() {
@@ -183,6 +205,7 @@ fn main() {
             get_window_tabs,
             switch_tab,
             close_tab,
+            new_tab,
             minimize_window,
             maximize_window,
             close_window,

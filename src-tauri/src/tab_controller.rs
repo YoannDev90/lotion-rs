@@ -145,7 +145,7 @@ impl TabController {
         let title_observer_js = format!(
             r#"
             (function() {{
-                const tabId = '{}';
+                const tabId = '{0}';
 
                 // 1. Title Observer
                 let lastTitle = document.title;
@@ -251,19 +251,19 @@ impl TabController {
 
                     const closeBtn = createBtn('#ff5f56', () => {{
                         if (window.__TAURI__) {{
-                            window.__TAURI__.invoke('close_window', {{ windowId: '${window_id}' }});
+                            window.__TAURI__.invoke('close_window', {{ windowId: '{1}' }});
                         }}
                     }});
 
                     const minBtn = createBtn('#ffbd2e', () => {{
                         if (window.__TAURI__) {{
-                            window.__TAURI__.invoke('minimize_window', {{ windowId: '${window_id}' }});
+                            window.__TAURI__.invoke('minimize_window', {{ windowId: '{1}' }});
                         }}
                     }});
 
                     const maxBtn = createBtn('#27c93f', () => {{
                         if (window.__TAURI__) {{
-                            window.__TAURI__.invoke('maximize_window', {{ windowId: '${window_id}' }});
+                            window.__TAURI__.invoke('maximize_window', {{ windowId: '{1}' }});
                         }}
                     }});
 
@@ -288,7 +288,7 @@ impl TabController {
 
                     const renderTabs = async () => {{
                         if (!window.__TAURI__) return;
-                        const tabs = await window.__TAURI__.invoke('get_window_tabs', {{ windowId: '{}' }});
+                        const tabs = await window.__TAURI__.invoke('get_window_tabs', {{ windowId: '{1}' }});
                         tabList.innerHTML = '';
                         tabs.forEach(t => {{
                             const tabEl = document.createElement('div');
@@ -313,7 +313,9 @@ impl TabController {
                         }});
 
                         const newTab = createBtn('#27c93f', () => {{
-                            window.location.href = 'lotion-action://tab:new';
+                            if (window.__TAURI__) {{
+                                window.__TAURI__.invoke('new_tab', {{ windowId: '{1}' }});
+                            }}
                         }}, '+');
                         newTab.style.marginLeft = '8px';
                         newTab.style.marginBottom = '6px';

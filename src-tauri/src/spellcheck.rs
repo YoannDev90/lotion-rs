@@ -22,15 +22,31 @@ impl SpellcheckManager {
             hunspell: Mutex::new(None),
         };
 
-        // Try to load default en_US dictionary on Linux
-        let aff = "/usr/share/hunspell/en_US.aff";
-        let dic = "/usr/share/hunspell/en_US.dic";
+        // Cross-platform dictionary discovery
+        let (aff, dic) = if cfg!(target_os = "windows") {
+            // Common Windows paths or relative to binary
+            (
+                "C:\\Program Files\\Hunspell\\en_US.aff".to_string(),
+                "C:\\Program Files\\Hunspell\\en_US.dic".to_string(),
+            )
+        } else if cfg!(target_os = "macos") {
+            (
+                "/Library/Spelling/en_US.aff".to_string(),
+                "/Library/Spelling/en_US.dic".to_string(),
+            )
+        } else {
+            (
+                "/usr/share/hunspell/en_US.aff".to_string(),
+                "/usr/share/hunspell/en_US.dic".to_string(),
+            )
+        };
 
-        if std::path::Path::new(aff).exists() && std::path::Path::new(dic).exists() {
-            manager.load_dictionaries(aff, dic);
+        if std::path::Path::new(&aff).exists() && std::path::Path::new(&dic).exists() {
+            manager.load_dictionaries(&aff, &dic);
         } else {
             log::warn!(
-                "SpellcheckManager: Default en_US dictionaries not found in /usr/share/hunspell/"
+                "SpellcheckManager: Default en_US dictionaries not found at {}",
+                aff
             );
         }
 
