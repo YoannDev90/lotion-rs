@@ -6,9 +6,12 @@
   <strong>A native Rust desktop client for Notion.so — built for Linux, engineered for adversarial environments.</strong>
 </p>
 
-### ☕ Donations
+### ❤️ Sponsor this project
 
-If this project saves you time or you just want to support its continued development, donations are welcome and very much appreciated.
+**[@pdiegoakanotoperator](https://github.com/sponsors/diegoakanotoperator)**  
+*Diego Aka Not Operator*
+
+[Learn more about GitHub Sponsors](https://github.com/sponsors/diegoakanotoperator)
 
 **Ethereum (ETH / ERC-20):**
 ```
@@ -264,15 +267,16 @@ See [`.github/workflows/release.yml`](.github/workflows/release.yml) for the ful
 
 ---
 
-## Support the Project
+## ❤️ Sponsor this project
 
-### 💼 Open to Work
+### 🛡️ Support Independent Development
 
-I'm currently **looking for a job** — open to roles in systems programming, security engineering, Rust development, or Linux desktop tooling. If you're hiring or know of an opportunity, feel free to reach out via a GitHub issue or discussion.
+Your support helps keep this project independent and focused on user privacy.
 
-### ☕ Donations
+**[@pdiegoakanotoperator](https://github.com/sponsors/diegoakanotoperator)**  
+*Diego Aka Not Operator*
 
-If this project saves you time or you just want to support its continued development, donations are welcome and very much appreciated.
+[Learn more about GitHub Sponsors](https://github.com/sponsors/diegoakanotoperator)
 
 **Ethereum (ETH / ERC-20):**
 ```
