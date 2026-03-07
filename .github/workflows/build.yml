@@ -50,6 +50,14 @@ jobs:
             bundle_glob: |
               src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
 
+          # ── Windows ───────────────────────────────────────────────
+          - name: Windows x86_64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            platform: windows-x86_64
+            bundle_glob: |
+              src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe
+
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -86,6 +94,12 @@ jobs:
             libclang-dev clang llvm \
             rpm
 
+      # ── Windows deps ────────────────────────────────────────────
+      - name: Install Windows system dependencies
+        if: runner.os == 'Windows'
+        run: |
+          echo "Using bundled hunspell..."
+
       # ── Rust ────────────────────────────────────────────────────
       - name: Setup Rust (stable)
         uses: dtolnay/rust-toolchain@stable
@@ -112,12 +126,16 @@ jobs:
       # ── Build ───────────────────────────────────────────────────
       - name: Build Tauri bundles
         working-directory: src-tauri
+        shell: bash
         run: |
           if [ "${{ runner.os }}" == "macOS" ]; then
             export SDKROOT=$(xcrun --show-sdk-path)
             export LIBCLANG_PATH="$(brew --prefix llvm)/lib"
             export DYLD_LIBRARY_PATH="$(brew --prefix llvm)/lib"
             echo "LIBCLANG_PATH: $LIBCLANG_PATH"
+          elif [ "${{ runner.os }}" == "Windows" ]; then
+            # Windows handled via env block for clarity
+            echo "Building on Windows..."
           else
             export LIBCLANG_PATH=$(llvm-config --libdir)
             echo "LIBCLANG_PATH: $LIBCLANG_PATH"
@@ -132,9 +150,9 @@ jobs:
         shell: bash
         run: |
           mkdir -p staging
-          # Copy every bundle file (deb/rpm/AppImage/dmg) to staging/
+          # Copy every bundle file (deb/rpm/AppImage/dmg/exe/msi) to staging/
           find src-tauri/target/${{ matrix.target }}/release/bundle \
-            \( -name "*.deb" -o -name "*.rpm" -o -name "*.AppImage" -o -name "*.dmg" \) \
+            \( -name "*.deb" -o -name "*.rpm" -o -name "*.AppImage" -o -name "*.dmg" -o -name "*.exe" -o -name "*.msi" \) \
             -exec cp {} staging/ \;
           ls -lh staging/
 

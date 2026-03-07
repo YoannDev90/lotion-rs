@@ -1,6 +1,6 @@
 {
     "productName": "lotion-rs",
-    "version": "0.2.2",
+    "version": "0.2.3",
     "identifier": "com.lotion.rs",
     "build": {
         "frontendDist": "assets"
@@ -25,7 +25,8 @@
             "deb",
             "rpm",
             "appimage",
-            "dmg"
+            "dmg",
+            "nsis"
         ],
         "icon": [
             "assets/icon.png",
