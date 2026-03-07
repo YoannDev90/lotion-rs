@@ -41,7 +41,7 @@ pub fn apply_windows_sandbox() -> Result<(), String> {
         // 3. Set UI Restrictions
         let mut ui_info: JOBOBJECT_BASIC_UI_RESTRICTIONS = std::mem::zeroed();
         ui_info.UIRestrictionsClass = JOB_OBJECT_UILIMIT_DESKTOP 
-            | JOB_OBJECT_UILIMIT_EXITPROCESS 
+            | JOB_OBJECT_UILIMIT_EXITWINDOWS 
             | JOB_OBJECT_UILIMIT_SYSTEMPARAMETERS;
 
         let res = SetInformationJobObject(
