@@ -37,7 +37,11 @@ impl<R: Runtime> WindowController<R> {
                     active_tab_id: None,
                 },
             );
-            let _ = app_state.save_to_disk();
+            if let Some(app_secret_state) = app.try_state::<Arc<Vec<u8>>>() {
+                let _ = app_state.save_to_disk(app_secret_state.inner().as_slice());
+            } else {
+                log::error!("Zero-Trust: App secret not found in state when creating new window state.");
+            }
         }
 
         Ok(Self { window, security })
@@ -62,7 +66,11 @@ impl<R: Runtime> WindowController<R> {
                 if let Some(w_state) = app_state.windows.get_mut(&window_label) {
                     w_state.is_focused = *focused;
                 }
-                let _ = app_state.save_to_disk();
+                if let Some(app_secret_state) = app_handle.try_state::<Arc<Vec<u8>>>() {
+                    let _ = app_state.save_to_disk(app_secret_state.inner().as_slice());
+                } else {
+                    log::error!("Zero-Trust: App secret not found in state when saving AppState (focused event).");
+                }
             }
             tauri::WindowEvent::Resized(size) => {
                 log::debug!("Window {} resized to {:?}", window_label, size);
@@ -79,7 +87,11 @@ impl<R: Runtime> WindowController<R> {
                     w_state.bounds.width = size.width as f64;
                     w_state.bounds.height = size.height as f64;
                 }
-                let _ = app_state.save_to_disk();
+                if let Some(app_secret_state) = app_handle.try_state::<Arc<Vec<u8>>>() {
+                    let _ = app_state.save_to_disk(app_secret_state.inner().as_slice());
+                } else {
+                    log::error!("Zero-Trust: App secret not found in state when saving AppState (resized event).");
+                }
             }
             tauri::WindowEvent::Moved(position) => {
                 log::debug!("Window {} moved to {:?}", window_label, position);
@@ -90,7 +102,11 @@ impl<R: Runtime> WindowController<R> {
                     w_state.bounds.x = Some(position.x as f64);
                     w_state.bounds.y = Some(position.y as f64);
                 }
-                let _ = app_state.save_to_disk();
+                if let Some(app_secret_state) = app_handle.try_state::<Arc<Vec<u8>>>() {
+                    let _ = app_state.save_to_disk(app_secret_state.inner().as_slice());
+                } else {
+                    log::error!("Zero-Trust: App secret not found in state when saving AppState (moved event).");
+                }
             }
             _ => {}
         });
