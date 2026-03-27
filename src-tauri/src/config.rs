@@ -88,15 +88,30 @@ impl LotionConfig {
         let path = Self::config_path();
         if path.exists() {
             match fs::read_to_string(&path) {
-                Ok(contents) => match toml::from_str::<LotionConfig>(&contents) {
-                    Ok(config) => {
-                        log::info!("Config loaded from {}", path.display());
-                        return config;
+                Ok(contents) => {
+                    match toml::from_str::<LotionConfig>(&contents) {
+                        Ok(mut config) => { // 'mut' is needed to modify config.custom_css_path
+                            if let Some(ref path) = config.custom_css_path {
+                                let custom_themes_dir = Self::config_dir().join("custom_themes");
+                                if !path.starts_with(&custom_themes_dir) {
+                                    log::warn!("Custom CSS path '{}' is outside the designated custom themes directory. Discarding for security.", path.display());
+                                    config.custom_css_path = None;
+                                } else if !path.extension().map_or(false, |ext| ext == "css") {
+                                    log::warn!("Custom CSS path '{}' does not have a .css extension. Discarding for security.", path.display());
+                                    config.custom_css_path = None;
+                                } else if !path.exists() {
+                                    log::warn!("Custom CSS path '{}' does not exist. Discarding.", path.display());
+                                    config.custom_css_path = None;
+                                }
+                            }
+                            log::info!("Config loaded from {}", path.display());
+                            return config;
+                        }
+                        Err(e) => {
+                            log::warn!("Failed to parse config, using defaults: {}", e);
+                        }
                     }
-                    Err(e) => {
-                        log::warn!("Failed to parse config, using defaults: {}", e);
-                    }
-                },
+                }, // End of Ok(contents) arm
                 Err(e) => {
                     log::warn!("Failed to read config file, using defaults: {}", e);
                 }

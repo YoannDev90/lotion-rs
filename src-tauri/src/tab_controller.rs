@@ -258,7 +258,17 @@ impl<R: Runtime> TabController<R> {
                 const log = (msg) => {
                     console.log(msg);
                     if (window.__TAURI__) {
+                        // The log_network_event command in Rust has origin validation and truncation.
                         window.__TAURI__.invoke('log_network_event', { event: msg });
+                    }
+                };
+
+                const getOrigin = (url) => {
+                    try {
+                        const u = new URL(url);
+                        return `${u.protocol}//${u.hostname}`;
+                    } catch {
+                        return 'invalid-url';
                     }
                 };
 
@@ -266,12 +276,13 @@ impl<R: Runtime> TabController<R> {
                 const originalFetch = window.fetch;
                 window.fetch = async (...args) => {
                     const url = args[0] instanceof Request ? args[0].url : args[0];
+                    const origin = getOrigin(url); // Log origin instead of full URL
                     try {
                         const response = await originalFetch(...args);
-                        log(`FETCH SUCCESS: ${response.status} ${url}`);
+                        log(`FETCH SUCCESS: ${response.status} from ${origin}`);
                         return response;
                     } catch (error) {
-                        log(`FETCH ERROR: ${url} - ${error.message}`);
+                        log(`FETCH ERROR: ${origin} - ${error.message}`);
                         throw error;
                     }
                 };
@@ -280,11 +291,12 @@ impl<R: Runtime> TabController<R> {
                 const originalOpen = XMLHttpRequest.prototype.open;
                 XMLHttpRequest.prototype.open = function(method, url) {
                     this._url = url;
+                    const origin = getOrigin(url); // Log origin instead of full URL
                     this.addEventListener('load', function() {
-                        log(`XHR SUCCESS: ${this.status} ${this._url}`);
+                        log(`XHR SUCCESS: ${this.status} from ${origin}`);
                     });
                     this.addEventListener('error', function() {
-                        log(`XHR ERROR: ${this._url}`);
+                        log(`XHR ERROR: ${origin}`);
                     });
                     return originalOpen.apply(this, arguments);
                 };
@@ -416,7 +428,12 @@ pub fn create_secure_webview_builder<R: Runtime>(
                                         let mut app_state = state_lock.blocking_lock();
                                         if let Some(w_state) = app_state.windows.get_mut(window_id) {
                                             w_state.tab_ids.push(new_id);
-                                            let _ = app_state.save_to_disk();
+                                            // Get app_secret from state
+                                            if let Some(app_secret_state) = nav_app.try_state::<Arc<Vec<u8>>>() {
+                                                let _ = app_state.save_to_disk(app_secret_state.inner().as_slice());
+                                            } else {
+                                                log::error!("Zero-Trust: App secret not found in state when trying to save AppState after new tab creation.");
+                                            }
                                         }
                                     }
                                 }

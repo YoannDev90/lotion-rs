@@ -88,12 +88,16 @@ impl<R: Runtime> ThemingEngine<R> for ThemeManager {
                 match std::fs::read_to_string(path) {
                     Ok(css) => {
                         log::info!("Loaded custom CSS from {}", path.display());
+                        // Escape backticks and backslashes to prevent JavaScript injection
+                        let escaped_css = css
+                            .replace('`', "\\`")
+                            .replace('\\', "\\\\");
                         return format!("(function() {{
                             const style = document.getElementById('lotion-custom-style') || document.createElement('style');
                             style.id = 'lotion-custom-style';
                             style.textContent = `{}`;
                             if (!style.parentElement) document.head.appendChild(style);
-                        }})();", css);
+                        }})();", escaped_css);
                     }
                     Err(e) => log::warn!("Failed to read custom CSS: {}", e),
                 }
