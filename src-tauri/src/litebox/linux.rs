@@ -22,7 +22,9 @@ pub fn apply_linux_sandbox() -> Result<(), String> {
         // but it can complicate resource access. We'll stick to basic resource dropping
         // if unshare fails or is restricted by sysctl.
         if libc::unshare(flags) != 0 {
-            log::warn!("LiteBox: Failed to unshare namespaces (might lack CAP_SYS_ADMIN or user namespaces restricted)");
+            let error_message = format!("LiteBox: Failed to unshare namespaces (might lack CAP_SYS_ADMIN or user namespaces restricted): {}", std::io::Error::last_os_error());
+            log::error!("{}", error_message);
+            return Err(error_message);
         } else {
             log::info!("LiteBox: Full namespace isolation enforced (NS, UTS, IPC, PID, NET).");
         }

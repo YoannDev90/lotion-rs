@@ -11,9 +11,11 @@ use tauri::Manager;
 
 #[tauri::command]
 fn get_window_tabs(
+    window: tauri::Window,
     window_id: String,
     state: tauri::State<'_, Arc<tokio::sync::Mutex<AppState>>>,
 ) -> Vec<lotion_rs::state::TabState> {
+    log::info!("get_window_tabs called from origin: {:?}", window.url());
     let app_state = state.blocking_lock();
     if let Some(w_state) = app_state.windows.get(&window_id) {
         w_state

@@ -18,7 +18,7 @@ impl SecurityModule {
         if let Err(e) = sandbox.apply_sandbox() {
             log::error!("CRITICAL: Failed to apply OS-level LiteBox sandbox: {}", e);
             // In a strict Zero-Trust model, we should panic here if the sandbox fails.
-            // panic!("Security sandbox initialization failed");
+            panic!("Security sandbox initialization failed: {}", e);
         }
 
         Self {
