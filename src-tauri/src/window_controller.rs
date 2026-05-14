@@ -1,19 +1,33 @@
 use crate::traits::{SecuritySandbox, TabOrchestrator};
 use std::sync::Arc;
-use tauri::{AppHandle, Manager, Runtime, Window, WindowBuilder};
+use tauri::{
+    webview::{WebviewWindow, WebviewWindowBuilder as WindowBuilder},
+    AppHandle, Manager, Runtime,
+};
 
 pub struct WindowController<R: Runtime> {
-    pub window: Window<R>,
+    pub window: WebviewWindow<R>,
     pub security: Arc<dyn SecuritySandbox>,
 }
 
 impl<R: Runtime> WindowController<R> {
     pub fn new(app: &AppHandle<R>, security: Arc<dyn SecuritySandbox>) -> tauri::Result<Self> {
-        let window = WindowBuilder::new(app, "main")
-            .title("lotion-rs")
-            .inner_size(1200.0, 768.0)
-            .decorations(false) // Custom injected Mac-like titlebar handles this now
-            .build()?;
+        let mut window_builder =
+            WindowBuilder::new(app, "main", tauri::WebviewUrl::App("index.html".into()))
+                .title("lotion-rs")
+                .inner_size(1200.0, 768.0);
+
+        #[cfg(target_os = "macos")]
+        {
+            window_builder = window_builder.decorations(false);
+        }
+
+        #[cfg(not(target_os = "macos"))]
+        {
+            window_builder = window_builder.decorations(true);
+        }
+
+        let window = window_builder.build()?;
 
         // Ensure window state exists in AppState
         let app_state_lock = app.state::<Arc<tokio::sync::Mutex<crate::state::AppState>>>();
@@ -40,7 +54,9 @@ impl<R: Runtime> WindowController<R> {
             if let Some(app_secret_state) = app.try_state::<Arc<Vec<u8>>>() {
                 let _ = app_state.save_to_disk(app_secret_state.inner().as_slice());
             } else {
-                log::error!("Zero-Trust: App secret not found in state when creating new window state.");
+                log::error!(
+                    "Zero-Trust: App secret not found in state when creating new window state."
+                );
             }
         }
 
@@ -74,9 +90,9 @@ impl<R: Runtime> WindowController<R> {
             }
             tauri::WindowEvent::Resized(size) => {
                 log::debug!("Window {} resized to {:?}", window_label, size);
-                if let Some(w) = app_handle.get_window(&window_label) {
+                if let Some(w) = app_handle.get_webview_window(&window_label) {
                     let webviews = w.webviews();
-                    for webview in webviews {
+                    for (_label, webview) in webviews {
                         let _ = webview.set_size(*size);
                     }
                 }

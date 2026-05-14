@@ -21,9 +21,9 @@ impl<R: Runtime> TabOrchestrator<R> for TabManager<R> {
             .expect("TabManager: tabs read lock poisoned");
         for (id, tab) in tabs.iter() {
             if id == tab_id {
-                tab.show()?;
+                tab.webview.show()?;
             } else {
-                tab.hide()?;
+                tab.webview.hide()?;
             }
         }
         Ok(())
@@ -70,7 +70,12 @@ impl<R: Runtime> TabManager<R> {
         }
     }
 
-    pub fn create_tab(&self, app: &AppHandle<R>, window_id: &str, url: &str) -> tauri::Result<String> {
+    pub fn create_tab(
+        &self,
+        app: &AppHandle<R>,
+        window_id: &str,
+        url: &str,
+    ) -> tauri::Result<String> {
         let tab_id = uuid::Uuid::new_v4().to_string();
 
         let tab_controller =

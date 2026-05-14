@@ -16,14 +16,19 @@ pub fn apply_linux_sandbox() -> Result<(), String> {
         // CLONE_NEWIPC: IPC namespace
         // CLONE_NEWPID: PID namespace (this process becomes PID 1 in the new namespace)
         // CLONE_NEWNET: Network namespace (no network access)
-        let flags = libc::CLONE_NEWNS | libc::CLONE_NEWUTS | libc::CLONE_NEWIPC | libc::CLONE_NEWPID | libc::CLONE_NEWNET;
-        
+        let flags = libc::CLONE_NEWNS
+            | libc::CLONE_NEWUTS
+            | libc::CLONE_NEWIPC
+            | libc::CLONE_NEWPID
+            | libc::CLONE_NEWNET;
+
         // Note: unshare(CLONE_NEWUSER) is often needed if not running as root,
         // but it can complicate resource access. We'll stick to basic resource dropping
         // if unshare fails or is restricted by sysctl.
         if libc::unshare(flags) != 0 {
-            let error_message = format!("LiteBox: Failed to unshare namespaces (might lack CAP_SYS_ADMIN or user namespaces restricted): {}", std::io::Error::last_os_error());
+            let error_message = format!("LiteBox: CRITICAL: Failed to unshare namespaces (might lack CAP_SYS_ADMIN or user namespaces restricted): {}. Security boundary was NOT established.", std::io::Error::last_os_error());
             log::error!("{}", error_message);
+            // FAIL-CLOSED: In a Zero-Trust model, we must NOT continue without isolation.
             return Err(error_message);
         } else {
             log::info!("LiteBox: Full namespace isolation enforced (NS, UTS, IPC, PID, NET).");

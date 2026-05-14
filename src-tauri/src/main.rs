@@ -6,13 +6,13 @@ use lotion_rs::config::LotionConfig;
 use lotion_rs::i18n::I18nManager;
 use lotion_rs::spellcheck::SpellcheckManager;
 use lotion_rs::state::AppState;
-use std::sync::Arc;
-use tauri::Manager;
+use rand::Rng;
 use std::fs::{self, File};
 use std::io::{Read, Write};
 #[cfg(target_family = "unix")]
 use std::os::unix::fs::PermissionsExt; // Specific import for unix permissions
-use rand::RngCore;
+use std::sync::Arc;
+use tauri::Manager;
 
 const SECRET_FILE_NAME: &str = "secret_key";
 
@@ -30,11 +30,14 @@ fn get_or_create_app_secret() -> Result<Vec<u8>, Box<dyn std::error::Error>> {
         log::info!("Application secret loaded from {}", secret_path.display());
         Ok(secret)
     } else {
-        log::info!("Generating new application secret at {}", secret_path.display());
+        log::info!(
+            "Generating new application secret at {}",
+            secret_path.display()
+        );
         fs::create_dir_all(&secret_dir)?;
-        
+
         let mut secret = vec![0u8; 32];
-        rand::thread_rng().fill_bytes(&mut secret);
+        rand::rng().fill_bytes(&mut secret);
 
         let mut file = File::create(&secret_path)?;
         #[cfg(target_family = "unix")]
@@ -49,26 +52,32 @@ fn get_or_create_app_secret() -> Result<Vec<u8>, Box<dyn std::error::Error>> {
 
 // Helper function to check if the command invocation origin is trusted
 fn is_trusted_origin<R: tauri::Runtime>(webview: &tauri::Webview<R>) -> bool {
-    // In a real application, this list of trusted origins would be configurable
-    // and potentially loaded from a secure source.
-    let trusted_origins = vec![
-        "https://www.notion.so",
-        "https://lotion.app", // Example of a self-controlled origin
-        "tauri://localhost", // For local development/devtools
-    ];
+    // Zero-Trust: Strictly limit origin access to Notion domains.
+    // Self-controlled origins like 'lotion.app' are removed unless needed for specific infra.
+    let trusted_origins = vec!["https://www.notion.so", "https://notion.so"];
 
     if let Ok(url) = webview.url() {
         let origin = format!("{}://{}", url.scheme(), url.host_str().unwrap_or_default());
-        let is_trusted = trusted_origins.iter().any(|o| origin.starts_with(o));
+        let is_trusted = trusted_origins.iter().any(|o| origin == *o);
+
         if !is_trusted {
-            log::warn!("Untrusted origin: {} attempted to invoke command.", origin);
+            // Development exception for localhost if explicitly enabled could go here
+            #[cfg(debug_assertions)]
+            if origin == "tauri://localhost" || origin == "wry://localhost" {
+                return true;
+            }
+
+            log::warn!(
+                "SECURITY ALERT: Untrusted origin '{}' attempted to invoke a privileged command.",
+                origin
+            );
         }
         is_trusted
     } else {
-        log::warn!("Could not determine origin for command invocation (webview URL not found).");
+        log::error!("SECURITY ERROR: Could not determine origin for command invocation.");
         false
     }
-} // <--- Added this closing brace
+}
 
 #[tauri::command]
 fn get_window_tabs(
@@ -217,7 +226,11 @@ fn update_tab_state(
 }
 
 #[tauri::command]
-fn minimize_window(webview: tauri::Webview<tauri::Wry>, window_id: String, app: tauri::AppHandle<tauri::Wry>) {
+fn minimize_window(
+    webview: tauri::Webview<tauri::Wry>,
+    window_id: String,
+    app: tauri::AppHandle<tauri::Wry>,
+) {
     if !is_trusted_origin(&webview) {
         return; // Deny access for untrusted origins
     }
@@ -227,7 +240,11 @@ fn minimize_window(webview: tauri::Webview<tauri::Wry>, window_id: String, app: 
 }
 
 #[tauri::command]
-fn maximize_window(webview: tauri::Webview<tauri::Wry>, window_id: String, app: tauri::AppHandle<tauri::Wry>) {
+fn maximize_window(
+    webview: tauri::Webview<tauri::Wry>,
+    window_id: String,
+    app: tauri::AppHandle<tauri::Wry>,
+) {
     if !is_trusted_origin(&webview) {
         return; // Deny access for untrusted origins
     }
@@ -241,7 +258,11 @@ fn maximize_window(webview: tauri::Webview<tauri::Wry>, window_id: String, app: 
 }
 
 #[tauri::command]
-fn close_window(webview: tauri::Webview<tauri::Wry>, window_id: String, app: tauri::AppHandle<tauri::Wry>) {
+fn close_window(
+    webview: tauri::Webview<tauri::Wry>,
+    window_id: String,
+    app: tauri::AppHandle<tauri::Wry>,
+) {
     if !is_trusted_origin(&webview) {
         return; // Deny access for untrusted origins
     }
@@ -255,13 +276,18 @@ fn log_network_event(webview: tauri::Webview<tauri::Wry>, event: String) {
     if !is_trusted_origin(&webview) {
         return; // Deny access for untrusted origins
     }
-    // Truncate event to prevent log spamming or excessive memory usage
-    let truncated_event = if event.len() > 512 {
-        format!("{}...", &event[..512])
-    } else {
-        event
-    };
-    log::info!("[lotion-net] {}", truncated_event);
+
+    // Privacy: Only log in debug builds to prevent sensitive URL/metadata leakage in prod logs.
+    #[cfg(debug_assertions)]
+    {
+        // Truncate event to prevent log spamming or excessive memory usage
+        let truncated_event = if event.len() > 512 {
+            format!("{}...", &event[..512])
+        } else {
+            event
+        };
+        log::debug!("[lotion-net] {}", truncated_event);
+    }
 }
 
 fn main() {
@@ -284,8 +310,8 @@ fn main() {
     log::info!("Starting Lotion-rs...");
 
     // Get or create application secret
-    let app_secret = get_or_create_app_secret()
-        .expect("Failed to get or create application secret");
+    let app_secret =
+        get_or_create_app_secret().expect("Failed to get or create application secret");
     let app_secret_arc = Arc::new(app_secret);
 
     // Load user config
@@ -359,7 +385,10 @@ fn main() {
                 .clone();
 
             // Spawn the main window directly via Tauri WindowController
-            match lotion_rs::window_controller::WindowController::<tauri::Wry>::new(&handle, security_state) {
+            match lotion_rs::window_controller::WindowController::<tauri::Wry>::new(
+                &handle,
+                security_state,
+            ) {
                 Ok(wc) => {
                     wc.setup_listeners(handle.clone());
                     if let Err(e) = wc.setup_tabs(&handle) {

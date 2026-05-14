@@ -89,9 +89,12 @@ impl<R: Runtime> ThemingEngine<R> for ThemeManager {
                     Ok(css) => {
                         log::info!("Loaded custom CSS from {}", path.display());
                         // Escape backticks and backslashes to prevent JavaScript injection
+                        // Note: backslashes must be escaped FIRST to avoid double-escaping 
+                        // the backslashes added by escaping other characters.
                         let escaped_css = css
+                            .replace('\\', "\\\\")
                             .replace('`', "\\`")
-                            .replace('\\', "\\\\");
+                            .replace('$', "\\$"); // Also escape $ for Template Literals
                         return format!("(function() {{
                             const style = document.getElementById('lotion-custom-style') || document.createElement('style');
                             style.id = 'lotion-custom-style';
