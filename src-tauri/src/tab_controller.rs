@@ -59,9 +59,15 @@ impl<R: Runtime> TabController<R> {
         webview.show()?;
         webview.set_focus()?;
 
-        // Hide the parent window's background content and show the final result
-        let _ = window.as_ref().window().set_focus();
-        let _ = window.as_ref().window().show();
+        // On Linux, we might need a small delay or a force show to ensure the child
+        // covers the "about:blank" white/gray background of the parent instantly.
+        let window_handle = window.as_ref().window().clone();
+        tauri::async_runtime::spawn(async move {
+            // Wait a tiny bit for the webview to initialize its buffer
+            tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+            let _ = window_handle.show();
+            let _ = window_handle.set_focus();
+        });
 
         log::info!("Created tab webview: {} in window: {}", tab_id, window_id);
 
@@ -71,12 +77,8 @@ impl<R: Runtime> TabController<R> {
         theming.inject_theme(&webview, &active_theme);
 
         // Inject title observer and platform-specific Window Controls
-        // On Linux/Windows, we prefer native decorations. On macOS, we use custom ones.
-        let platform_css = if cfg!(target_os = "macos") {
-            ".notion-sidebar-container { margin-top: 38px !important; } .notion-topbar { padding-left: 80px !important; } #lotion-custom-titlebar { display: flex !important; }"
-        } else {
-            "#lotion-custom-titlebar { display: none !important; }"
-        };
+        // On Linux/Windows, we use native decorations.
+        let platform_css = "#lotion-custom-titlebar { display: none !important; }";
 
         let title_observer_js = format!(
             "(function() {{

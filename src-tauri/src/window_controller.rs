@@ -12,7 +12,8 @@ pub struct WindowController<R: Runtime> {
 
 impl<R: Runtime> WindowController<R> {
     pub fn new(app: &AppHandle<R>, security: Arc<dyn SecuritySandbox>) -> tauri::Result<Self> {
-        // Use a blank data URL instead of index.html to eliminate the background page content
+        // Create the background window with native decorations.
+        // We use about:blank but ensure it stays hidden until the first tab is ready.
         let mut window_builder = WindowBuilder::new(
             app,
             "main",
@@ -20,18 +21,19 @@ impl<R: Runtime> WindowController<R> {
         )
         .title("lotion-rs")
         .inner_size(1200.0, 768.0)
-        .center() // Ensure it appears centered
-        .focused(true) // Request focus on creation
-        .visible(false);
-
-        #[cfg(target_os = "macos")]
-        {
-            window_builder = window_builder.decorations(false);
-        }
+        .center()
+        .focused(true)
+        .visible(false); // Stay hidden during initialization
 
         #[cfg(not(target_os = "macos"))]
         {
+            // Explicitly request native decorations for Linux/Windows
             window_builder = window_builder.decorations(true);
+
+            // Fix: In Tauri 2.0, shadow(true) is required on some Linux DEs for
+            // native borders to appear correctly with child webviews.
+            window_builder = window_builder.shadow(true);
+
             // On Linux/KDE, we need to explicitly set an icon for it to show in taskbars
             if let Some(icon) = app.default_window_icon() {
                 window_builder = window_builder.icon(icon.clone()).unwrap_or_else(|_| {
@@ -51,14 +53,12 @@ impl<R: Runtime> WindowController<R> {
             }
         }
 
-        // Hide the background page content as much as possible by forcing a dark color
-        // if the theme is dark, or just ensuring it's not "white" by default.
-        // We use a blank data URL instead of about:blank to ensure total control.
+        // Use a much more minimal data URL to ensure no gray box or background is visible
         let window = window_builder.build()?;
 
         // On Linux, child windows added via add_child might be rendered UNDER the parent.
         // We ensure the parent is visible and the child is brought to front in TabController.
-        
+
         // Ensure window state exists in AppState
         let app_state_lock = app.state::<Arc<tokio::sync::Mutex<crate::state::AppState>>>();
         let mut app_state = app_state_lock.blocking_lock();

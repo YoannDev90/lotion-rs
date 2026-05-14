@@ -197,6 +197,17 @@ fn update_tab_state(
 
     let mut app_state = state.blocking_lock();
 
+    // Check if state actually changed to avoid excessive disk I/O
+    let should_save = if let Some(existing) = app_state.tabs.get(&tab_id) {
+        existing.title != title || existing.url != url
+    } else {
+        true
+    };
+
+    if !should_save {
+        return;
+    }
+
     // Update or Insert TabState
     app_state.tabs.insert(
         tab_id.clone(),
@@ -204,7 +215,7 @@ fn update_tab_state(
             id: tab_id.clone(),
             title: title.clone(),
             url: url.clone(),
-            is_active: true, // If it's sending updates, it's presumably the active one in its window
+            is_active: true,
             is_pinned: false,
         },
     );
