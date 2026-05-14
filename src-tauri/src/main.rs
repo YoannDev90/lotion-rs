@@ -248,6 +248,7 @@ fn minimize_window(
     if !is_trusted_origin(&webview) {
         return; // Deny access for untrusted origins
     }
+    log::info!("CMD: minimize_window for {}", window_id);
     if let Some(window) = app.get_webview_window(&window_id) {
         let _ = window.minimize();
     }
@@ -262,6 +263,7 @@ fn maximize_window(
     if !is_trusted_origin(&webview) {
         return; // Deny access for untrusted origins
     }
+    log::info!("CMD: maximize_window for {}", window_id);
     if let Some(window) = app.get_webview_window(&window_id) {
         if let Ok(true) = window.is_maximized() {
             let _ = window.unmaximize();
@@ -280,6 +282,7 @@ fn close_window(
     if !is_trusted_origin(&webview) {
         return; // Deny access for untrusted origins
     }
+    log::info!("CMD: close_window for {}", window_id);
     if let Some(window) = app.get_webview_window(&window_id) {
         let _ = window.close();
     }
@@ -354,6 +357,15 @@ fn main() {
     // Tauri Application Context
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .on_window_event(|window, event| match event {
+            tauri::WindowEvent::CloseRequested { api, .. } => {
+                log::info!("WINDOW EVENT [{}]: CloseRequested", window.label());
+            }
+            tauri::WindowEvent::Focused(focused) => {
+                log::debug!("WINDOW EVENT [{}]: Focused({})", window.label(), focused);
+            }
+            _ => {}
+        })
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             if let Some(window) = app.get_webview_window("main") {

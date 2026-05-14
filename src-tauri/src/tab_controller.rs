@@ -41,17 +41,44 @@ impl<R: Runtime> TabController<R> {
         window.show()?;
         window.set_focus()?;
 
-        log::info!("Navigated window {} to tab: {} with URL: {}", window_id, tab_id, url_str);
+        log::info!(
+            "Navigated window {} to tab: {} with URL: {}",
+            window_id,
+            tab_id,
+            url_str
+        );
 
         let theming = app.state::<Arc<dyn ThemingEngine<R>>>();
         let active_theme = theming.get_active_theme();
         theming.inject_theme(window.as_ref(), &active_theme);
 
-        let platform_css = "#lotion-custom-titlebar { display: none !important; }";
+        let platform_css = "
+            #lotion-custom-titlebar { display: none !important; }
+            .notion-topbar { top: 0 !important; }
+            .notion-frame { padding-top: 0 !important; }
+            [role='banner'] { display: none !important; }
+        ";
 
         let title_observer_js = format!(
             "(function() {{
                 const tabId = '{0}';
+                
+                // Hide any existing custom titlebars immediately
+                const hideTitlebar = () => {{
+                    const tb = document.getElementById('lotion-custom-titlebar');
+                    if (tb) tb.style.display = 'none';
+                    
+                    // Notion specific tweaks to recover space
+                    const notionTopbar = document.querySelector('.notion-topbar');
+                    if (notionTopbar) {{
+                        notionTopbar.style.top = '0px';
+                    }}
+                }};
+                
+                hideTitlebar();
+                setTimeout(hideTitlebar, 1000);
+                setTimeout(hideTitlebar, 3000);
+
                 let lastTitle = document.title;
                 const observer = new MutationObserver(function() {{
                     if (document.title !== lastTitle) {{

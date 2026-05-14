@@ -27,11 +27,19 @@ impl<R: Runtime> WindowController<R> {
 
         #[cfg(not(target_os = "macos"))]
         {
-            window_builder = window_builder.decorations(true);
-            window_builder = window_builder.shadow(true);
+            window_builder = window_builder.decorations(true).shadow(true);
+            log::debug!("Window native decorations enabled for target_os");
 
-            if let Some(icon) = app.default_window_icon() {
-                window_builder = window_builder.icon(icon.clone()).unwrap_or_else(|_| {
+            // KDE/Linux specific: Ensure the icon is explicitly set from the assets
+            // even if default_window_icon() fails or returns something generic.
+            let icon_path = std::path::PathBuf::from("assets/icon.png");
+            let icon = tauri::image::Image::from_path(icon_path).ok();
+            let icon = icon.or_else(|| app.default_window_icon().cloned());
+
+            if let Some(i) = icon {
+                window_builder = window_builder.icon(i).unwrap_or_else(|e| {
+                    log::warn!("Failed to set icon: {}", e);
+                    // Return a fresh builder if the icon call consumed the old one but failed
                     WindowBuilder::new(
                         app,
                         "main",
@@ -43,6 +51,7 @@ impl<R: Runtime> WindowController<R> {
                     .focused(true)
                     .visible(false)
                     .decorations(true)
+                    .shadow(true)
                 });
             }
         }
@@ -128,16 +137,20 @@ impl<R: Runtime> WindowController<R> {
     pub fn setup_tabs(&self, app: &AppHandle<R>) -> tauri::Result<()> {
         let app_state_lock = app.state::<Arc<tokio::sync::Mutex<crate::state::AppState>>>();
         let app_state = app_state_lock.blocking_lock();
-        
+
         if let Some(w_state) = app_state.windows.get("main") {
             if let Some(ref active_tab_id) = w_state.active_tab_id {
                 if let Some(tab_state) = app_state.tabs.get(active_tab_id) {
-                    if let Some(orchestrator) = app.try_state::<Arc<dyn crate::traits::TabOrchestrator<R>>>() {
+                    if let Some(orchestrator) =
+                        app.try_state::<Arc<dyn crate::traits::TabOrchestrator<R>>>()
+                    {
                         let _ = orchestrator.create_tab(app, "main", &tab_state.url);
                     }
                 }
             } else {
-                if let Some(orchestrator) = app.try_state::<Arc<dyn crate::traits::TabOrchestrator<R>>>() {
+                if let Some(orchestrator) =
+                    app.try_state::<Arc<dyn crate::traits::TabOrchestrator<R>>>()
+                {
                     let _ = orchestrator.create_tab(app, "main", "https://www.notion.so");
                 }
             }
