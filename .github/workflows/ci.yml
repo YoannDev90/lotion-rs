@@ -5,6 +5,7 @@ on:
     branches: [main, develop, rust-version]
   pull_request:
     branches: [main, develop, rust-version]
+  workflow_dispatch:
 
 # Cancel any in-progress run for the same branch/PR so we never waste minutes.
 concurrency:

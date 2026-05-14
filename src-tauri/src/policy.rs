@@ -144,7 +144,8 @@ mod tests {
     fn test_should_route_popup_to_system_browser() {
         let policy = PolicyManager::new();
         // OAuth providers should NOT be routed (they stay in app to capture session)
-        assert!(!policy.should_route_popup_to_system_browser("https://accounts.google.com/o/oauth2/v2/auth"));
+        assert!(!policy
+            .should_route_popup_to_system_browser("https://accounts.google.com/o/oauth2/v2/auth"));
         assert!(!policy.should_route_popup_to_system_browser("https://appleid.apple.com/auth"));
 
         // External links (e.g., GitHub, Slack) should be routed to system browser
@@ -166,7 +167,7 @@ mod tests {
         assert!(policy.validate_url("https://www.notion.so/login"));
         assert!(policy.validate_url("https://notion.com/some-page"));
         assert!(policy.validate_url("https://msgstore.www.notion.so/v1/health"));
-        
+
         // OAuth providers allowed during login
         assert!(policy.validate_url("https://accounts.google.com/auth"));
         assert!(policy.validate_url("https://appleid.apple.com/auth"));
@@ -201,7 +202,7 @@ mod tests {
     fn test_validate_external_links() {
         let policy = PolicyManager::new();
         // Repository and support links should work (they open in browser)
-        assert!(policy.validate_external_link("https://github.com/diegoakanotoperator/lotion-rs"));
+        assert!(policy.validate_external_link("https://github.com/YoannDev90/lotion-rs"));
         assert!(policy.validate_external_link("https://github.com/puneetsl/lotion"));
         assert!(policy.validate_external_link("mailto:support@notion.so"));
 
@@ -209,7 +210,7 @@ mod tests {
         assert!(!policy.validate_external_link("http://unsecure-link.com"));
         assert!(!policy.validate_external_link("javascript:alert('XSS')"));
         assert!(!policy.validate_external_link("file:///etc/passwd"));
-        
+
         // Block trackers/analytics even for external clicks
         assert!(!policy.validate_external_link("https://www.googletagmanager.com/gtm.js"));
         assert!(!policy.validate_external_link("https://www.google-analytics.com/collect"));

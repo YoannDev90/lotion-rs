@@ -6,26 +6,6 @@
   <strong>A native Rust desktop client for Notion.so — built for Linux, engineered for adversarial environments.</strong>
 </p>
 
-### ❤️ Sponsor this project
-
-**[@pdiegoakanotoperator](https://github.com/sponsors/diegoakanotoperator)**  
-*Diego Aka Not Operator*
-
-[Learn more about GitHub Sponsors](https://github.com/sponsors/diegoakanotoperator)
-
-**Ethereum (ETH / ERC-20):**
-```
-0xe7254b9a20a95658167a84120a84dce9326ef3ac
-```
-
----
-
-<p align="center">
-  <a href="https://github.com/puneetsl/lotion">Based on Lotion by Puneet Singh Ludu</a> &nbsp;·&nbsp;
-  <a href="https://github.com/SecByDesignCollective/Manifesto">Security Philosophy: SecByDesign Manifesto</a>
-</p>
-
----
 
 # Lotion-rs
 
@@ -47,18 +27,22 @@ The original Lotion solved this brilliantly using Electron. But Electron carries
 - A large memory footprint
 - No memory-safe systems layer
 
+```bash
+curl -fsSL https://raw.githubusercontent.com/YoannDev90/lotion-rs/main/install.sh | bash
+```
+
 ## Installation
 
 ### 📦 Download Pre-built Packages
 
 You can download the latest version for your platform here:
 
-- [🐧 Linux (.deb)](https://github.com/diegoakanotoperator/lotion-rs/releases/latest/download/lotion-rs_amd64.deb)
-- [🐧 Linux (.AppImage)](https://github.com/diegoakanotoperator/lotion-rs/releases/latest/download/lotion-rs.AppImage)
-- [🐧 Linux (.rpm)](https://github.com/diegoakanotoperator/lotion-rs/releases/latest/download/lotion-rs.rpm)
-- [🍎 macOS Intel (x64 .dmg)](https://github.com/diegoakanotoperator/lotion-rs/releases/latest/download/lotion-rs-x64.dmg)
-- [🍎 macOS Silicon (arm64 .dmg)](https://github.com/diegoakanotoperator/lotion-rs/releases/latest/download/lotion-rs-arm64.dmg)
-- [🪟 Windows (x64 .exe)](https://github.com/diegoakanotoperator/lotion-rs/releases/latest/download/lotion-rs-setup.exe)
+- [🐧 Linux (.deb)](https://github.com/YoannDev90/lotion-rs/releases/latest/download/lotion-rs_amd64.deb)
+- [🐧 Linux (.AppImage)](https://github.com/YoannDev90/lotion-rs/releases/latest/download/lotion-rs.AppImage)
+- [🐧 Linux (.rpm)](https://github.com/YoannDev90/lotion-rs/releases/latest/download/lotion-rs.rpm)
+- [🍎 macOS Intel (x64 .dmg)](https://github.com/YoannDev90/lotion-rs/releases/latest/download/lotion-rs-x64.dmg)
+- [🍎 macOS Silicon (arm64 .dmg)](https://github.com/YoannDev90/lotion-rs/releases/latest/download/lotion-rs-arm64.dmg)
+- [🪟 Windows (x64 .exe)](https://github.com/YoannDev90/lotion-rs/releases/latest/download/lotion-rs-setup.exe)
 
 ### Debian / Ubuntu
 
@@ -87,15 +71,15 @@ Download and run the `lotion-rs-setup.exe` installer.
 
 Lotion-rs keeps everything that made Lotion great and rebuilds the foundation in Rust:
 
-| | Original Lotion | Lotion-rs |
-|---|---|---|
-| **Language** | TypeScript / JavaScript | Rust |
-| **Runtime** | Electron + Node.js | Tauri v2 (native) |
-| **UI** | Chromium renderer | System WebView + Injected native UI chrome |
-| **Memory** | ~200–400 MB | ~60–100 MB |
-| **Security** | Standard Electron sandbox | Zero-Trust + LiteBox sandboxing |
-| **Config** | JSON | TOML (`~/.config/lotion-rs/config.toml`) |
-| **Packages** | `.deb`, `.rpm`, `.zip` | `.deb`, `.rpm`, `.AppImage` |
+|              | Original Lotion           | Lotion-rs                                  |
+| ------------ | ------------------------- | ------------------------------------------ |
+| **Language** | TypeScript / JavaScript   | Rust                                       |
+| **Runtime**  | Electron + Node.js        | Tauri v2 (native)                          |
+| **UI**       | Chromium renderer         | System WebView + Injected native UI chrome |
+| **Memory**   | ~200–400 MB               | ~60–100 MB                                 |
+| **Security** | Standard Electron sandbox | Zero-Trust + LiteBox sandboxing            |
+| **Config**   | JSON                      | TOML (`~/.config/lotion-rs/config.toml`)   |
+| **Packages** | `.deb`, `.rpm`, `.zip`    | `.deb`, `.rpm`, `.AppImage`                |
 
 ---
 
@@ -176,7 +160,7 @@ cargo install tauri-cli --version "^2.0"
 ### Build
 
 ```bash
-git clone https://github.com/diegoakanotoperator/lotion-rs.git
+git clone https://github.com/YoannDev90/lotion-rs.git
 cd lotion-rs/src-tauri
 cargo tauri build
 ```
@@ -212,14 +196,14 @@ height = 800.0
 maximized = false
 ```
 
-| Key | Default | Description |
-|---|---|---|
-| `active_theme` | `"dracula"` | Name of the built-in theme to apply |
-| `custom_css_path` | `null` | Absolute path to a custom CSS file |
-| `restore_tabs` | `true` | Restore open tabs on launch |
-| `window.width` | `1200` | Initial window width in pixels |
-| `window.height` | `800` | Initial window height in pixels |
-| `window.maximized` | `false` | Start maximised |
+| Key                | Default     | Description                         |
+| ------------------ | ----------- | ----------------------------------- |
+| `active_theme`     | `"dracula"` | Name of the built-in theme to apply |
+| `custom_css_path`  | `null`      | Absolute path to a custom CSS file  |
+| `restore_tabs`     | `true`      | Restore open tabs on launch         |
+| `window.width`     | `1200`      | Initial window width in pixels      |
+| `window.height`    | `800`       | Initial window height in pixels     |
+| `window.maximized` | `false`     | Start maximised                     |
 
 ---
 
@@ -258,31 +242,13 @@ See [`.github/workflows/release.yml`](.github/workflows/release.yml) for the ful
 ---
 
 ## Acknowledgments
-
+- **[Diegoakanotoperator](https://github.com/diegoakanotoperator)** — Creator of the original [Lotion-rs](https://github.com/diegoakanotoperator/lotion-rs)
 - **[Puneet Singh Ludu](https://github.com/puneetsl)** — Creator of the original [Lotion](https://github.com/puneetsl/lotion) Electron application for Linux. Lotion-rs would not exist without that project's vision of bringing Notion natively to the Linux desktop. Tremendous respect and thanks.
 - **[sysdrum/notion-app](https://github.com/sysdrum/notion-app)** — Early inspiration referenced in the original Lotion project.
 - **[SecByDesign Collective](https://github.com/SecByDesignCollective/Manifesto)** — The Zero-Trust Engineering Manifesto, which defines the security philosophy this project is built on.
 - **[Tauri v2](https://v2.tauri.app/)** — The framework that makes a lightweight, cross-platform, Rust-native desktop app possible.
 - **[Microsoft LiteBox](https://github.com/microsoft/LiteBox)** — Inspiration for the sandboxing technology used to provide OS-level process containment layers within the application.
-
----
-
-## ❤️ Sponsor this project
-
-### 🛡️ Support Independent Development
-
-Your support helps keep this project independent and focused on user privacy.
-
-**[@pdiegoakanotoperator](https://github.com/sponsors/diegoakanotoperator)**  
-*Diego Aka Not Operator*
-
-[Learn more about GitHub Sponsors](https://github.com/sponsors/diegoakanotoperator)
-
-**Ethereum (ETH / ERC-20):**
-```
-0xe7254b9a20a95658167a84120a84dce9326ef3ac
-```
-
+- 
 ---
 
 ## Disclaimer

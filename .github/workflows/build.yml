@@ -9,6 +9,7 @@ on:
     tags: ["v*"]
   pull_request:
     branches: [main, develop, rust-version]
+  workflow_dispatch:
 
 concurrency:
   group: build-${{ github.ref }}

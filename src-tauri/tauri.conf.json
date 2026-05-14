@@ -1,44 +1,31 @@
 {
-    "productName": "lotion-rs",
-    "version": "0.2.4",
-    "identifier": "io.lotion-rs.secure.v2",
-    "build": {
-        "frontendDist": "assets"
-    },
-    "plugins": {
-        "updater": {
-            "endpoints": [
-                "https://github.com/diegoakanotoperator/lotion-rs/releases/latest/download/latest.json"
-            ],
-            "dialog": true,
-            "pubkey": "RWQpCdih9OnWkf2sTicrpau6XAB8D8xKOqoMNnTcbAZfJ14SN5bCFkl/"
-        }
-    },
-    "app": {
-        "security": {
-            "csp": "default-src 'self' notion.so *.notion.so notion-static.com tauri://localhost wry://localhost; script-src 'self' 'unsafe-inline' 'unsafe-eval' notion.so *.notion.so notion-static.com tauri://localhost wry://localhost; connect-src 'self' notion.so *.notion.so notion-static.com tauri://localhost wry://localhost; img-src 'self' data: blob: notion.so *.notion.so notion-static.com; style-src 'self' 'unsafe-inline' notion.so *.notion.so; font-src 'self' data: notion.so *.notion.so;"
-        }
-    },
-    "bundle": {
-        "active": true,
-        "targets": [
-            "deb",
-            "rpm",
-            "appimage",
-            "dmg",
-            "nsis"
-        ],
-        "icon": [
-            "assets/icon.png",
-            "assets/icon.ico",
-            "assets/icon.icns"
-        ],
-        "category": "Productivity",
-        "shortDescription": "Native Rust client for Notion.so",
-        "longDescription": "lotion-rs is a native Rust desktop client for Notion.so, built with Tauri v2. Features Zero-Trust security, LiteBox sandboxing, and custom theming.",
-        "resources": [
-            "assets/*",
-            "i18n/**/*"
-        ]
+  "productName": "lotion-rs",
+  "version": "0.2.4",
+  "identifier": "io.lotion-rs.secure.v2",
+  "build": {
+    "frontendDist": "assets"
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/YoannDev90/lotion-rs/releases/latest/download/latest.json"
+      ],
+      "dialog": true,
+      "pubkey": "RWQpCdih9OnWkf2sTicrpau6XAB8D8xKOqoMNnTcbAZfJ14SN5bCFkl/"
     }
+  },
+  "app": {
+    "security": {
+      "csp": "default-src 'self' notion.so *.notion.so notion-static.com tauri://localhost wry://localhost; script-src 'self' 'unsafe-inline' 'unsafe-eval' notion.so *.notion.so notion-static.com tauri://localhost wry://localhost; connect-src 'self' notion.so *.notion.so notion-static.com tauri://localhost wry://localhost; img-src 'self' data: blob: notion.so *.notion.so notion-static.com; style-src 'self' 'unsafe-inline' notion.so *.notion.so; font-src 'self' data: notion.so *.notion.so;"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["deb", "rpm", "appimage", "dmg", "nsis"],
+    "icon": ["assets/icon.png", "assets/icon.ico", "assets/icon.icns"],
+    "category": "Productivity",
+    "shortDescription": "Native Rust client for Notion.so",
+    "longDescription": "lotion-rs is a native Rust desktop client for Notion.so, built with Tauri v2. Features Zero-Trust security, LiteBox sandboxing, and custom theming.",
+    "resources": ["assets/*", "i18n/**/*"]
+  }
 }

@@ -16,6 +16,7 @@ on:
       - ".github/workflows/integrity.yml"
   pull_request:
     branches: [main, develop]
+  workflow_dispatch:
 
 permissions:
   contents: read
