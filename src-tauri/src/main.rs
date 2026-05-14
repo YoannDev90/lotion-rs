@@ -311,8 +311,9 @@ fn main() {
     #[cfg(target_os = "linux")]
     {
         std::env::set_var("NO_AT_BRIDGE", "1");
-        std::env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
-        std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+        // Remove compositing and DMABUF restrictions that might interfere with native decorations
+        // std::env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
+        // std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
         std::env::set_var("WEBKIT_USE_SINGLE_WEB_PROCESS", "1");
         std::env::set_var("WEBKIT_DISABLE_ACCESSIBILITY", "1");
         std::env::set_var("GTK_A11Y", "none");
@@ -358,7 +359,7 @@ fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .on_window_event(|window, event| match event {
-            tauri::WindowEvent::CloseRequested { api, .. } => {
+            tauri::WindowEvent::CloseRequested { .. } => {
                 log::info!("WINDOW EVENT [{}]: CloseRequested", window.label());
             }
             tauri::WindowEvent::Focused(focused) => {

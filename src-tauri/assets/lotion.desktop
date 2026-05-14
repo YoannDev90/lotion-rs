@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=lotion-rs
+Exec=lotion-rs
+Icon=lotion-rs
+Type=Application
+Categories=Productivity;
+Comment=Native Rust client for Notion.so
+StartupWMClass=lotion-rs
+Terminal=false

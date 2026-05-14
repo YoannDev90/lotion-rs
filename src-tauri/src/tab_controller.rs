@@ -1,7 +1,6 @@
 use crate::traits::{PolicyEnforcer, ThemingEngine};
 use std::sync::Arc;
 use tauri::{AppHandle, Manager, Runtime, Url, WebviewWindow};
-use tauri_plugin_opener::OpenerExt;
 
 pub struct TabController<R: Runtime> {
     pub tab_id: String,
@@ -53,10 +52,35 @@ impl<R: Runtime> TabController<R> {
         theming.inject_theme(window.as_ref(), &active_theme);
 
         let platform_css = "
-            #lotion-custom-titlebar { display: none !important; }
-            .notion-topbar { top: 0 !important; }
-            .notion-frame { padding-top: 0 !important; }
-            [role='banner'] { display: none !important; }
+            * {
+                -webkit-app-region: no-drag !important;
+            }
+            #lotion-custom-titlebar { 
+                display: none !important; 
+                height: 0 !important;
+                pointer-events: none !important;
+                -webkit-app-region: no-drag !important;
+            }
+            .notion-topbar { 
+                top: 0 !important; 
+                -webkit-app-region: no-drag !important;
+            }
+            .notion-frame { 
+                padding-top: 0 !important; 
+                -webkit-app-region: no-drag !important;
+            }
+            [role='banner'] { 
+                display: none !important; 
+                -webkit-app-region: no-drag !important;
+            }
+            
+            /* Clean up any potential white bars at the top */
+            html, body {
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+                border-top: none !important;
+                -webkit-app-region: no-drag !important;
+            }
         ";
 
         let title_observer_js = format!(

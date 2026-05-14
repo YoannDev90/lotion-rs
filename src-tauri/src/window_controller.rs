@@ -31,7 +31,7 @@ impl<R: Runtime> WindowController<R> {
             log::debug!("Window native decorations enabled for target_os");
 
             // KDE/Linux specific: Ensure the icon is explicitly set from the assets
-            // even if default_window_icon() fails or returns something generic.
+            // and set the app_id to match the .desktop file for Wayland support.
             let icon_path = std::path::PathBuf::from("assets/icon.png");
             let icon = tauri::image::Image::from_path(icon_path).ok();
             let icon = icon.or_else(|| app.default_window_icon().cloned());
@@ -39,7 +39,6 @@ impl<R: Runtime> WindowController<R> {
             if let Some(i) = icon {
                 window_builder = window_builder.icon(i).unwrap_or_else(|e| {
                     log::warn!("Failed to set icon: {}", e);
-                    // Return a fresh builder if the icon call consumed the old one but failed
                     WindowBuilder::new(
                         app,
                         "main",
@@ -59,6 +58,33 @@ impl<R: Runtime> WindowController<R> {
         let window = window_builder.build()?;
 
         let app_state_lock = app.state::<Arc<tokio::sync::Mutex<crate::state::AppState>>>();
+
+        // Fix for Linux/KDE: The native window decoration needs to be "activated" 
+        // to receive clicks on its buttons without a prior click to focus.
+        #[cfg(target_os = "linux")]
+        {
+            let win = window.clone();
+            tauri::async_runtime::spawn(async move {
+                // Wait for the webview to be semi-ready
+                tokio::time::sleep(tokio::time::Duration::from_millis(800)).await;
+                
+                // Sequence to force KWin to register the decoration state
+                let _ = win.show();
+                let _ = win.unminimize(); // Ensure it's not starting minimized
+                let _ = win.set_focus();
+                
+                // Emitting a resize often forces a layout/event recalculation in GTK/KWin
+                if let Ok(size) = win.inner_size() {
+                    let _ = win.set_size(tauri::Size::Physical(size));
+                }
+                
+                log::info!("Linux: Native window activation sequence completed");
+            });
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            window.show()?;
+        }
         let mut app_state = app_state_lock.blocking_lock();
         if !app_state.windows.contains_key("main") {
             app_state.windows.insert(
