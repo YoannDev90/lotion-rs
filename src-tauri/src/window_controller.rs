@@ -15,7 +15,8 @@ impl<R: Runtime> WindowController<R> {
         let mut window_builder =
             WindowBuilder::new(app, "main", tauri::WebviewUrl::App("index.html".into()))
                 .title("lotion-rs")
-                .inner_size(1200.0, 768.0);
+                .inner_size(1200.0, 768.0)
+                .visible(false);
 
         #[cfg(target_os = "macos")]
         {

@@ -7,7 +7,6 @@ use aes_gcm::{
 use base64::{engine::general_purpose, Engine as _};
 use pbkdf2::pbkdf2_hmac;
 use rand::Rng;
-use rand_core::RngCore;
 use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 use std::collections::HashMap;

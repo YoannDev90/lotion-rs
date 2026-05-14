@@ -26,10 +26,17 @@ pub fn apply_linux_sandbox() -> Result<(), String> {
         // but it can complicate resource access. We'll stick to basic resource dropping
         // if unshare fails or is restricted by sysctl.
         if libc::unshare(flags) != 0 {
-            let error_message = format!("LiteBox: CRITICAL: Failed to unshare namespaces (might lack CAP_SYS_ADMIN or user namespaces restricted): {}. Security boundary was NOT established.", std::io::Error::last_os_error());
-            log::error!("{}", error_message);
-            // FAIL-CLOSED: In a Zero-Trust model, we must NOT continue without isolation.
-            return Err(error_message);
+            let err = std::io::Error::last_os_error();
+            let error_message = format!("LiteBox: CRITICAL: Failed to unshare namespaces (might lack CAP_SYS_ADMIN or user namespaces restricted): {}. Security boundary was NOT established.", err);
+
+            if err.raw_os_error() == Some(1) {
+                // EPERM
+                log::warn!("LiteBox: Namespace isolation failed (EPERM). Falling back to basic process hardening.");
+            } else {
+                log::error!("{}", error_message);
+                // FAIL-CLOSED: In a Zero-Trust model, we must NOT continue without isolation.
+                return Err(error_message);
+            }
         } else {
             log::info!("LiteBox: Full namespace isolation enforced (NS, UTS, IPC, PID, NET).");
         }

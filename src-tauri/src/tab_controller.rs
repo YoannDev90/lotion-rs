@@ -3,6 +3,7 @@ use crate::traits::{PolicyEnforcer, ThemingEngine};
 use std::sync::Arc;
 use tauri::webview::{NewWindowResponse, Webview, WebviewBuilder};
 use tauri::{AppHandle, Manager, Runtime, Url, WebviewUrl};
+use tauri_plugin_opener::OpenerExt;
 
 pub struct TabController<R: Runtime> {
     pub tab_id: String,
@@ -50,6 +51,10 @@ impl<R: Runtime> TabController<R> {
             tauri::LogicalPosition::new(0.0, 0.0),
             tauri::LogicalSize::new(inner_size.width as f64, inner_size.height as f64),
         )?;
+
+        // Hide the parent window's background content and show the final result
+        let _ = window.as_ref().window().set_focus();
+        let _ = window.as_ref().window().show();
 
         log::info!("Created tab webview: {} in window: {}", tab_id, window_id);
 
@@ -165,7 +170,8 @@ impl<R: Runtime> TabController<R> {
                     titlebar.appendChild(tabList);
                     document.body.appendChild(titlebar);
                     renderTabs();
-                    setInterval(renderTabs, 5000);
+                    // Removed performance-draining interval. Updates are now event-driven.
+                    // setInterval(renderTabs, 5000);
                 }});
             }})();",
             tab_id, window_id, platform_css
@@ -290,7 +296,7 @@ pub fn create_secure_webview_builder<R: Runtime>(
             let url_str = url.as_str();
             if popup_policy.should_route_popup_to_system_browser(url_str) {
                 log::info!("Zero-Trust: Routing popup to system browser: {}", url_str);
-                let _ = tauri_plugin_shell::ShellExt::shell(&popup_app).open(url_str, None);
+                let _ = popup_app.opener().open_url(url_str, None::<String>);
                 return NewWindowResponse::Deny;
             }
 
