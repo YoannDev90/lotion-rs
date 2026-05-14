@@ -14,6 +14,7 @@ pub struct WindowController<R: Runtime> {
 impl<R: Runtime> WindowController<R> {
     pub fn new(app: &AppHandle<R>, security: Arc<dyn SecuritySandbox>) -> tauri::Result<Self> {
         // Create the main window with native decorations.
+        #[allow(unused_mut)]
         let mut window_builder = WindowBuilder::new(
             app,
             "main",

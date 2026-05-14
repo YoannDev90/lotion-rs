@@ -289,7 +289,7 @@ fn close_window(
 }
 
 #[tauri::command]
-fn log_network_event(webview: tauri::Webview<tauri::Wry>, event: String) {
+fn log_network_event(webview: tauri::Webview<tauri::Wry>, _event: String) {
     if !is_trusted_origin(&webview) {
         return; // Deny access for untrusted origins
     }
@@ -298,10 +298,10 @@ fn log_network_event(webview: tauri::Webview<tauri::Wry>, event: String) {
     #[cfg(debug_assertions)]
     {
         // Truncate event to prevent log spamming or excessive memory usage
-        let truncated_event = if event.len() > 512 {
-            format!("{}...", &event[..512])
+        let truncated_event = if _event.len() > 512 {
+            format!("{}...", &_event[..512])
         } else {
-            event
+            _event
         };
         log::debug!("[lotion-net] {}", truncated_event);
     }
