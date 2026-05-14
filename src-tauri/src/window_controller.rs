@@ -59,7 +59,7 @@ impl<R: Runtime> WindowController<R> {
 
         let app_state_lock = app.state::<Arc<tokio::sync::Mutex<crate::state::AppState>>>();
 
-        // Fix for Linux/KDE: The native window decoration needs to be "activated" 
+        // Fix for Linux/KDE: The native window decoration needs to be "activated"
         // to receive clicks on its buttons without a prior click to focus.
         #[cfg(target_os = "linux")]
         {
@@ -67,17 +67,17 @@ impl<R: Runtime> WindowController<R> {
             tauri::async_runtime::spawn(async move {
                 // Wait for the webview to be semi-ready
                 tokio::time::sleep(tokio::time::Duration::from_millis(800)).await;
-                
+
                 // Sequence to force KWin to register the decoration state
                 let _ = win.show();
                 let _ = win.unminimize(); // Ensure it's not starting minimized
                 let _ = win.set_focus();
-                
+
                 // Emitting a resize often forces a layout/event recalculation in GTK/KWin
                 if let Ok(size) = win.inner_size() {
                     let _ = win.set_size(tauri::Size::Physical(size));
                 }
-                
+
                 log::info!("Linux: Native window activation sequence completed");
             });
         }
