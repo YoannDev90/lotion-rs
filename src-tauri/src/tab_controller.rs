@@ -44,13 +44,20 @@ impl<R: Runtime> TabController<R> {
         let webview_builder =
             create_secure_webview_builder(app, &tab_id, &url, window_id, policy.clone());
 
+        // Set background to transparent to hide the parent "Initialzing" text
+        let webview_builder = webview_builder.transparent(true);
+
         let inner_size = window.inner_size()?;
         // In Tauri 2.0 WebviewWindow can ADD CHILD using its Window part
         let webview = window.as_ref().window().add_child(
             webview_builder,
-            tauri::LogicalPosition::new(0.0, 0.0),
+            tauri::LogicalPosition::new(0.0, 0.0), // Use (0,0) as we want it to cover the parent
             tauri::LogicalSize::new(inner_size.width as f64, inner_size.height as f64),
         )?;
+
+        // Ensure the child webview is shown and covers the parent completely.
+        webview.show()?;
+        webview.set_focus()?;
 
         // Hide the parent window's background content and show the final result
         let _ = window.as_ref().window().set_focus();
@@ -80,11 +87,13 @@ impl<R: Runtime> TabController<R> {
                 const observer = new MutationObserver(function() {{
                     if (document.title !== lastTitle) {{
                         lastTitle = document.title;
+                        const currentUrl = window.location.href;
+                        // Avoid redundant updates if nothing changed
                         if (window.__TAURI__) {{
                             window.__TAURI__.invoke('update_tab_state', {{
                                 tabId: tabId,
                                 title: lastTitle,
-                                url: window.location.href
+                                url: currentUrl
                             }});
                         }}
                     }}

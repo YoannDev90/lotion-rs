@@ -379,6 +379,20 @@ fn main() {
             // Native Menu Setup
             let _ = lotion_rs::menu::create_main_menu(&handle);
 
+            // Global Menu Event Handler
+            handle.on_menu_event(move |app_handle, event| {
+                match event.id.as_ref() {
+                    "preferences" => {
+                        log::info!("Menu: Preferences requested");
+                        // Future: open preferences window
+                    }
+                    "quit" => {
+                        app_handle.exit(0);
+                    }
+                    _ => {}
+                }
+            });
+
             let security_state = handle
                 .state::<Arc<dyn lotion_rs::traits::SecuritySandbox>>()
                 .inner()

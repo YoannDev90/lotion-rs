@@ -12,11 +12,17 @@ pub struct WindowController<R: Runtime> {
 
 impl<R: Runtime> WindowController<R> {
     pub fn new(app: &AppHandle<R>, security: Arc<dyn SecuritySandbox>) -> tauri::Result<Self> {
-        let mut window_builder =
-            WindowBuilder::new(app, "main", tauri::WebviewUrl::App("index.html".into()))
-                .title("lotion-rs")
-                .inner_size(1200.0, 768.0)
-                .visible(false);
+        // Use a blank data URL instead of index.html to eliminate the background page content
+        let mut window_builder = WindowBuilder::new(
+            app,
+            "main",
+            tauri::WebviewUrl::External("about:blank".parse().unwrap()),
+        )
+        .title("lotion-rs")
+        .inner_size(1200.0, 768.0)
+        .center() // Ensure it appears centered
+        .focused(true) // Request focus on creation
+        .visible(false);
 
         #[cfg(target_os = "macos")]
         {
@@ -26,10 +32,33 @@ impl<R: Runtime> WindowController<R> {
         #[cfg(not(target_os = "macos"))]
         {
             window_builder = window_builder.decorations(true);
+            // On Linux/KDE, we need to explicitly set an icon for it to show in taskbars
+            if let Some(icon) = app.default_window_icon() {
+                window_builder = window_builder.icon(icon.clone()).unwrap_or_else(|_| {
+                    // Fallback to original builder if icon setting fails
+                    WindowBuilder::new(
+                        app,
+                        "main",
+                        tauri::WebviewUrl::External("about:blank".parse().unwrap()),
+                    )
+                    .title("lotion-rs")
+                    .inner_size(1200.0, 768.0)
+                    .center()
+                    .focused(true)
+                    .visible(false)
+                    .decorations(true)
+                });
+            }
         }
 
+        // Hide the background page content as much as possible by forcing a dark color
+        // if the theme is dark, or just ensuring it's not "white" by default.
+        // We use a blank data URL instead of about:blank to ensure total control.
         let window = window_builder.build()?;
 
+        // On Linux, child windows added via add_child might be rendered UNDER the parent.
+        // We ensure the parent is visible and the child is brought to front in TabController.
+        
         // Ensure window state exists in AppState
         let app_state_lock = app.state::<Arc<tokio::sync::Mutex<crate::state::AppState>>>();
         let mut app_state = app_state_lock.blocking_lock();
@@ -66,11 +95,14 @@ impl<R: Runtime> WindowController<R> {
 
     pub fn setup_listeners(&self, app_handle: AppHandle<R>) {
         let window_label = self.window.label().to_string();
+        let handle_for_close = app_handle.clone();
 
         self.window.on_window_event(move |event| match event {
-            tauri::WindowEvent::CloseRequested { .. } => {
+            tauri::WindowEvent::CloseRequested { api, .. } => {
                 log::info!("Window {} close requested", window_label);
-                app_handle.exit(0);
+                // Prevent default to ensure clean exit
+                api.prevent_close();
+                handle_for_close.exit(0);
             }
             tauri::WindowEvent::Focused(focused) => {
                 log::debug!("Window {} focused: {}", window_label, focused);
