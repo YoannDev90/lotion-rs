@@ -28,7 +28,7 @@ The original Lotion solved this brilliantly using Electron. But Electron carries
 - No memory-safe systems layer
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/YoannDev90/lotion-rs/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/YoannDev90/lotion-rs/master/install.sh | bash
 ```
 
 ## Installation
