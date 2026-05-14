@@ -311,6 +311,11 @@ fn main() {
     #[cfg(target_os = "linux")]
     {
         std::env::set_var("NO_AT_BRIDGE", "1");
+
+        // KDE/Wayland Button Click Fix: Force native X11 Windowing instead of Wayland.
+        // Tauri/WebKitGTK on Wayland often fails to route titlebar clicks properly to KWin.
+        std::env::set_var("GDK_BACKEND", "x11");
+
         // Remove compositing and DMABUF restrictions that might interfere with native decorations
         // std::env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
         // std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
