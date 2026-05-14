@@ -51,7 +51,7 @@ impl<R: Runtime> TabOrchestrator<R> for TabManager<R> {
             .get(tab_id)
         {
             let theming = app.state::<Arc<dyn crate::traits::ThemingEngine<R>>>();
-            theming.inject_theme(&tab.webview, theme_name);
+            theming.inject_theme(tab.webview.as_ref(), theme_name);
         }
         Ok(())
     }

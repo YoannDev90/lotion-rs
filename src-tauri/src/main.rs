@@ -11,8 +11,12 @@ use std::fs::{self, File};
 use std::io::{Read, Write};
 #[cfg(target_family = "unix")]
 use std::os::unix::fs::PermissionsExt; // Specific import for unix permissions
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::time::Duration;
 use tauri::Manager;
+
+pub static NEEDS_SAVE: AtomicBool = AtomicBool::new(false);
 
 const SECRET_FILE_NAME: &str = "secret_key";
 
@@ -52,9 +56,8 @@ fn get_or_create_app_secret() -> Result<Vec<u8>, Box<dyn std::error::Error>> {
 
 // Helper function to check if the command invocation origin is trusted
 fn is_trusted_origin<R: tauri::Runtime>(webview: &tauri::Webview<R>) -> bool {
-    // Zero-Trust: Strictly limit origin access to Notion domains.
-    // Self-controlled origins like 'lotion.app' are removed unless needed for specific infra.
-    let trusted_origins = vec!["https://www.notion.so", "https://notion.so"];
+    // Zero-Trust: Strictly limit origin access to Notion domains and internal about:blank
+    let trusted_origins = vec!["https://www.notion.so", "https://notion.so", "about:blank"];
 
     if let Ok(url) = webview.url() {
         let origin = format!("{}://{}", url.scheme(), url.host_str().unwrap_or_default());
@@ -173,7 +176,7 @@ fn update_tab_state(
     title: String,
     url: String,
     state: tauri::State<'_, Arc<tokio::sync::Mutex<AppState>>>,
-    app_secret_state: tauri::State<'_, Arc<Vec<u8>>>,
+    _app_secret_state: tauri::State<'_, Arc<Vec<u8>>>,
 ) {
     if !is_trusted_origin(&webview) {
         return; // Deny access for untrusted origins
@@ -227,9 +230,9 @@ fn update_tab_state(
         }
     }
 
-    let _ = app_state.save_to_disk(app_secret_state.inner().as_slice());
+    NEEDS_SAVE.store(true, Ordering::Relaxed);
     log::debug!(
-        "[lotion-state] Updated tab {} (title: {}, url: {})",
+        "[lotion-state] Marked state for delayed save: {} (title: {}, url: {})",
         tab_id,
         title,
         url
@@ -245,7 +248,7 @@ fn minimize_window(
     if !is_trusted_origin(&webview) {
         return; // Deny access for untrusted origins
     }
-    if let Some(window) = app.get_window(&window_id) {
+    if let Some(window) = app.get_webview_window(&window_id) {
         let _ = window.minimize();
     }
 }
@@ -259,7 +262,7 @@ fn maximize_window(
     if !is_trusted_origin(&webview) {
         return; // Deny access for untrusted origins
     }
-    if let Some(window) = app.get_window(&window_id) {
+    if let Some(window) = app.get_webview_window(&window_id) {
         if let Ok(true) = window.is_maximized() {
             let _ = window.unmaximize();
         } else {
@@ -277,7 +280,7 @@ fn close_window(
     if !is_trusted_origin(&webview) {
         return; // Deny access for untrusted origins
     }
-    if let Some(window) = app.get_window(&window_id) {
+    if let Some(window) = app.get_webview_window(&window_id) {
         let _ = window.close();
     }
 }
@@ -353,7 +356,7 @@ fn main() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-            if let Some(window) = app.get_window("main") {
+            if let Some(window) = app.get_webview_window("main") {
                 let _ = window.show();
                 let _ = window.set_focus();
             }
@@ -389,6 +392,31 @@ fn main() {
 
             // Native Menu Setup
             let _ = lotion_rs::menu::create_main_menu(&handle);
+
+            // Consolidate State Management: Single background loop for disk I/O
+            let state_save_handle = app.handle().clone();
+            let state_save_secret = app_secret_arc.clone();
+            tauri::async_runtime::spawn(async move {
+                loop {
+                    tokio::time::sleep(Duration::from_secs(30)).await;
+
+                    // Check both flags (main.rs and window_controller.rs)
+                    let mut needs_save = NEEDS_SAVE.swap(false, Ordering::SeqCst);
+                    needs_save |=
+                        lotion_rs::window_controller::NEEDS_SAVE.swap(false, Ordering::SeqCst);
+
+                    if needs_save {
+                        let app_state_lock =
+                            state_save_handle.state::<Arc<tokio::sync::Mutex<AppState>>>();
+                        let app_state = app_state_lock.lock().await;
+                        if let Err(e) = app_state.save_to_disk(&state_save_secret) {
+                            log::error!("[lotion-state] Background save failed: {}", e);
+                        } else {
+                            log::info!("[lotion-state] Background state save completed.");
+                        }
+                    }
+                }
+            });
 
             // Global Menu Event Handler
             handle.on_menu_event(move |app_handle, event| {

@@ -16,49 +16,11 @@ pub fn create_main_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
             ..Default::default()
         }))
         .separator()
-        .item(&MenuItem::with_id(
-            app,
-            "preferences",
-            "Preferences",
-            true,
-            Some("CmdOrCtrl+,"),
-        )?)
-        .separator()
         .quit()
         .build()?;
 
-    // Navigation Menu
-    let nav_menu = SubmenuBuilder::new(app, "Navigation")
-        .item(&MenuItem::with_id(
-            app,
-            "nav_back",
-            "Back",
-            true,
-            Some("Alt+Left"),
-        )?)
-        .item(&MenuItem::with_id(
-            app,
-            "nav_forward",
-            "Forward",
-            true,
-            Some("Alt+Right"),
-        )?)
-        .item(&MenuItem::with_id(
-            app,
-            "nav_refresh",
-            "Refresh",
-            true,
-            Some("CmdOrCtrl+R"),
-        )?)
-        .separator()
-        .item(&MenuItem::with_id(
-            app,
-            "nav_home",
-            "Home",
-            true,
-            Some("CmdOrCtrl+H"),
-        )?)
-        .build()?;
+    // Navigation Menu (Temporarily simplified or removed if not handled yet)
+    // Removed Back/Forward/Refresh/Home as they are not currently linked to handlers in this view.
 
     // Edit Menu
     let edit_menu = SubmenuBuilder::new(app, "Edit")
@@ -127,7 +89,6 @@ pub fn create_main_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
 
     let menu = MenuBuilder::new(app)
         .item(&lotion_menu)
-        .item(&nav_menu)
         .item(&edit_menu)
         .item(&view_menu)
         .build()?;
@@ -136,21 +97,6 @@ pub fn create_main_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
 
     app.on_menu_event(move |app_handle, event| {
         match event.id().as_ref() {
-            "nav_back" => {
-                log::info!("Menu: Back");
-            }
-            "nav_forward" => {
-                log::info!("Menu: Forward");
-            }
-            "nav_refresh" => {
-                log::info!("Menu: Refresh");
-            }
-            "nav_home" => {
-                log::info!("Menu: Home");
-            }
-            "preferences" => {
-                log::info!("Menu: Preferences");
-            }
             "toggle_dev_tools" => {
                 log::info!("Menu: Toggle Developer Tools (disabled in release)");
             }
