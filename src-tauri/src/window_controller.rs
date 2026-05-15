@@ -29,7 +29,7 @@ impl<R: Runtime> WindowController<R> {
         #[cfg(not(target_os = "macos"))]
         {
             window_builder = window_builder.decorations(true).shadow(true);
-            log::debug!("Window native decorations enabled for target_os");
+            tracing::debug!("Window native decorations enabled for target_os");
 
             // KDE/Linux specific: Ensure the icon is explicitly set from the assets
             // and set the app_id to match the .desktop file for Wayland support.
@@ -39,7 +39,7 @@ impl<R: Runtime> WindowController<R> {
 
             if let Some(i) = icon {
                 window_builder = window_builder.icon(i).unwrap_or_else(|e| {
-                    log::warn!("Failed to set icon: {}", e);
+                    tracing::warn!("Failed to set icon: {}", e);
                     WindowBuilder::new(
                         app,
                         "main",
@@ -79,7 +79,7 @@ impl<R: Runtime> WindowController<R> {
                     let _ = win.set_size(tauri::Size::Physical(size));
                 }
 
-                log::info!("Linux: Native window activation sequence completed");
+                tracing::info!("Linux: Native window activation sequence completed");
             });
         }
         #[cfg(not(target_os = "linux"))]
@@ -118,12 +118,12 @@ impl<R: Runtime> WindowController<R> {
 
         self.window.on_window_event(move |event| match event {
             tauri::WindowEvent::CloseRequested { api, .. } => {
-                log::info!("Window {} close requested", window_label);
+                tracing::info!("Window {} close requested", window_label);
                 api.prevent_close();
                 handle_for_close.exit(0);
             }
             tauri::WindowEvent::Focused(focused) => {
-                log::debug!("Window {} focused: {}", window_label, focused);
+                tracing::debug!("Window {} focused: {}", window_label, focused);
                 let app_state_lock =
                     app_handle.state::<Arc<tokio::sync::Mutex<crate::state::AppState>>>();
                 let mut app_state = app_state_lock.blocking_lock();
@@ -136,7 +136,7 @@ impl<R: Runtime> WindowController<R> {
                 NEEDS_SAVE.store(true, Ordering::Relaxed);
             }
             tauri::WindowEvent::Resized(size) => {
-                log::debug!("Window {} resized to {:?}", window_label, size);
+                tracing::debug!("Window {} resized to {:?}", window_label, size);
                 let app_state_lock =
                     app_handle.state::<Arc<tokio::sync::Mutex<crate::state::AppState>>>();
                 let mut app_state = app_state_lock.blocking_lock();
@@ -147,7 +147,7 @@ impl<R: Runtime> WindowController<R> {
                 NEEDS_SAVE.store(true, Ordering::Relaxed);
             }
             tauri::WindowEvent::Moved(position) => {
-                log::debug!("Window {} moved to {:?}", window_label, position);
+                tracing::debug!("Window {} moved to {:?}", window_label, position);
                 let app_state_lock =
                     app_handle.state::<Arc<tokio::sync::Mutex<crate::state::AppState>>>();
                 let mut app_state = app_state_lock.blocking_lock();

@@ -44,7 +44,7 @@ impl SpellcheckManager {
         if std::path::Path::new(&aff).exists() && std::path::Path::new(&dic).exists() {
             manager.load_dictionaries(&aff, &dic);
         } else {
-            log::warn!(
+            tracing::warn!(
                 "SpellcheckManager: Default en_US dictionaries not found at {}",
                 aff
             );
@@ -59,7 +59,7 @@ impl SpellcheckManager {
             .hunspell
             .lock()
             .expect("SpellcheckManager: hunspell lock poisoned") = Some(SafeHunspell(hs));
-        log::info!("Hunspell dictionaries loaded successfully.");
+        tracing::info!("Hunspell dictionaries loaded successfully.");
     }
 }
 

@@ -98,11 +98,11 @@ pub fn create_main_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
     app.on_menu_event(move |app_handle, event| {
         match event.id().as_ref() {
             "toggle_dev_tools" => {
-                log::info!("Menu: Toggle Developer Tools (disabled in release)");
+                tracing::info!("Menu: Toggle Developer Tools (disabled in release)");
             }
             theme_id if theme_id.starts_with("theme_") => {
                 let theme_name = theme_id.replace("theme_", "");
-                log::info!("Menu: Switch theme to {}", theme_name);
+                tracing::info!("Menu: Switch theme to {}", theme_name);
 
                 // Retrieve state manually to avoid borrowing issues
                 if let Some(theming) =

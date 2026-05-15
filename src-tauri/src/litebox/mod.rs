@@ -39,13 +39,13 @@ impl LiteBox {
 
         #[cfg(target_os = "linux")]
         {
-            log::info!("LiteBox: Applying Linux generic namespace/seccomp boundaries");
+            tracing::info!("LiteBox: Applying Linux generic namespace/seccomp boundaries");
             linux::apply_linux_sandbox()?;
         }
 
         #[cfg(target_os = "windows")]
         {
-            log::info!("LiteBox: Applying Windows AppContainer/Job Object boundaries");
+            tracing::info!("LiteBox: Applying Windows AppContainer/Job Object boundaries");
             windows::apply_windows_sandbox()?;
         }
 
@@ -56,7 +56,7 @@ impl LiteBox {
 
 impl SecuritySandbox for LiteBox {
     fn initialize(&self) {
-        log::info!("SecuritySandbox: LiteBox OS-Level Enforcement Online.");
+        tracing::info!("SecuritySandbox: LiteBox OS-Level Enforcement Online.");
     }
 
     fn get_fd_count(&self) -> usize {
@@ -76,6 +76,6 @@ impl SecuritySandbox for LiteBox {
 #[allow(dead_code)]
 #[cfg(not(any(target_os = "linux", target_os = "windows")))]
 fn apply_fallback_sandbox() -> Result<(), String> {
-    log::warn!("LiteBox: No OS-level sandbox implemented for this platform. Running dangerously.");
+    tracing::warn!("LiteBox: No OS-level sandbox implemented for this platform. Running dangerously.");
     Ok(())
 }

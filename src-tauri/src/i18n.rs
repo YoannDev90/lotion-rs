@@ -27,7 +27,7 @@ impl I18nManager {
         // Strict sanitization: restrict to ASCII alphanumeric, hyphens, and underscores.
         // Explicitly reject any path separators, parent directory references, or excessive lengths.
         if !validate_locale(locale) {
-            log::warn!(
+            tracing::warn!(
                 "I18nManager: BLOCKED attempt to load invalid locale string: '{}'",
                 locale
             );
@@ -61,7 +61,7 @@ impl I18nManager {
                                         tr.insert(k, s.to_string());
                                     }
                                 }
-                                log::info!("Loaded locale: {}", locale);
+                                tracing::info!("Loaded locale: {}", locale);
                             }
                         }
                         break;

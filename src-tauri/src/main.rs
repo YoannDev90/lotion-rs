@@ -31,10 +31,10 @@ fn get_or_create_app_secret() -> Result<Vec<u8>, Box<dyn std::error::Error>> {
         let mut file = File::open(&secret_path)?;
         let mut secret = vec![0u8; 32];
         file.read_exact(&mut secret)?;
-        log::info!("Application secret loaded from {}", secret_path.display());
+        tracing::info!("Application secret loaded from {}", secret_path.display());
         Ok(secret)
     } else {
-        log::info!(
+        tracing::info!(
             "Generating new application secret at {}",
             secret_path.display()
         );
@@ -55,13 +55,13 @@ fn get_or_create_app_secret() -> Result<Vec<u8>, Box<dyn std::error::Error>> {
 }
 
 // Helper function to check if the command invocation origin is trusted
-fn is_trusted_origin<R: tauri::Runtime>(webview: &tauri::Webview<R>) -> bool {
-    // Zero-Trust: Strictly limit origin access to Notion domains and internal about:blank
-    let trusted_origins = vec!["https://www.notion.so", "https://notion.so", "about:blank"];
-
+fn is_trusted_origin<R: tauri::Runtime>(
+    webview: &tauri::Webview<R>,
+    config: &LotionConfig,
+) -> bool {
     if let Ok(url) = webview.url() {
         let origin = format!("{}://{}", url.scheme(), url.host_str().unwrap_or_default());
-        let is_trusted = trusted_origins.iter().any(|o| origin == *o);
+        let is_trusted = config.trusted_domains.iter().any(|o| origin == *o);
 
         if !is_trusted {
             // Development exception for localhost if explicitly enabled could go here
@@ -70,38 +70,39 @@ fn is_trusted_origin<R: tauri::Runtime>(webview: &tauri::Webview<R>) -> bool {
                 return true;
             }
 
-            log::warn!(
+            tracing::warn!(
                 "SECURITY ALERT: Untrusted origin '{}' attempted to invoke a privileged command.",
                 origin
             );
         }
         is_trusted
     } else {
-        log::error!("SECURITY ERROR: Could not determine origin for command invocation.");
+        tracing::error!("SECURITY ERROR: Could not determine origin for command invocation.");
         false
     }
 }
 
 #[tauri::command]
-fn get_window_tabs(
+async fn get_window_tabs(
     webview: tauri::Webview<tauri::Wry>,
     window_id: String,
     state: tauri::State<'_, Arc<tokio::sync::Mutex<AppState>>>,
-) -> Vec<lotion_rs::state::TabState> {
-    if !is_trusted_origin(&webview) {
-        return Vec::new(); // Deny access for untrusted origins
+    config: tauri::State<'_, LotionConfig>,
+) -> Result<Vec<lotion_rs::state::TabState>, String> {
+    if !is_trusted_origin(&webview, &config) {
+        return Err("Untrusted origin".into());
     }
-    log::info!("get_window_tabs called from origin: {:?}", webview.url());
-    let app_state = state.blocking_lock();
+    tracing::info!("get_window_tabs called from origin: {:?}", webview.url());
+    let app_state = state.lock().await;
     if let Some(w_state) = app_state.windows.get(&window_id) {
-        w_state
+        Ok(w_state
             .tab_ids
             .iter()
             .filter_map(|id| app_state.tabs.get(id))
             .cloned()
-            .collect()
+            .collect())
     } else {
-        Vec::new()
+        Ok(Vec::new())
     }
 }
 
@@ -110,28 +111,33 @@ fn switch_tab(
     webview: tauri::Webview<tauri::Wry>,
     tab_id: String,
     orchestrator: tauri::State<'_, Arc<dyn lotion_rs::traits::TabOrchestrator<tauri::Wry>>>,
-) {
-    if !is_trusted_origin(&webview) {
-        return; // Deny access for untrusted origins
+    config: tauri::State<'_, LotionConfig>,
+) -> Result<(), String> {
+    if !is_trusted_origin(&webview, &config) {
+        return Err("Untrusted origin".into());
     }
-    let _ = orchestrator.show_tab(&tab_id);
+    orchestrator.show_tab(&tab_id).map_err(|e| e.to_string())?;
+    Ok(())
 }
 
 #[tauri::command]
-fn close_tab(
+async fn close_tab(
     webview: tauri::Webview<tauri::Wry>,
     tab_id: String,
     _app: tauri::AppHandle<tauri::Wry>,
     orchestrator: tauri::State<'_, Arc<dyn lotion_rs::traits::TabOrchestrator<tauri::Wry>>>,
     state: tauri::State<'_, Arc<tokio::sync::Mutex<AppState>>>,
     app_secret_state: tauri::State<'_, Arc<Vec<u8>>>,
-) {
-    if !is_trusted_origin(&webview) {
-        return; // Deny access for untrusted origins
+    config: tauri::State<'_, LotionConfig>,
+) -> Result<(), String> {
+    if !is_trusted_origin(&webview, &config) {
+        return Err("Untrusted origin".into());
     }
-    let _ = orchestrator.destroy_tab(&tab_id);
+    orchestrator
+        .destroy_tab(&tab_id)
+        .map_err(|e| e.to_string())?;
 
-    let mut app_state = state.blocking_lock();
+    let mut app_state = state.lock().await;
     app_state.tabs.remove(&tab_id);
     for window_state in app_state.windows.values_mut() {
         window_state.tab_ids.retain(|id| id != &tab_id);
@@ -142,63 +148,65 @@ fn close_tab(
             }
         }
     }
-    let _ = app_state.save_to_disk(app_secret_state.inner().as_slice());
+    app_state
+        .save_to_disk(app_secret_state.inner().as_slice())
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(())
 }
 
 #[tauri::command]
-fn new_tab(
+async fn new_tab(
     webview: tauri::Webview<tauri::Wry>,
     window_id: String,
     app: tauri::AppHandle<tauri::Wry>,
     orchestrator: tauri::State<'_, Arc<dyn lotion_rs::traits::TabOrchestrator<tauri::Wry>>>,
     state: tauri::State<'_, Arc<tokio::sync::Mutex<AppState>>>,
     app_secret_state: tauri::State<'_, Arc<Vec<u8>>>,
-) {
-    if !is_trusted_origin(&webview) {
-        return; // Deny access for untrusted origins
+    config: tauri::State<'_, LotionConfig>,
+) -> Result<(), String> {
+    if !is_trusted_origin(&webview, &config) {
+        return Err("Untrusted origin".into());
     }
     let notion_url = "https://www.notion.so";
-    if let Ok(new_id) = orchestrator.create_tab(&app, &window_id, notion_url) {
-        let _ = orchestrator.show_tab(&new_id);
+    let new_id = orchestrator
+        .create_tab(&app, &window_id, notion_url)
+        .map_err(|e| e.to_string())?;
+    orchestrator.show_tab(&new_id).map_err(|e| e.to_string())?;
 
-        let mut app_state = state.blocking_lock();
-        if let Some(w_state) = app_state.windows.get_mut(&window_id) {
-            w_state.tab_ids.push(new_id);
-            let _ = app_state.save_to_disk(app_secret_state.inner().as_slice());
-        }
+    let mut app_state = state.lock().await;
+    if let Some(w_state) = app_state.windows.get_mut(&window_id) {
+        w_state.tab_ids.push(new_id);
+        app_state
+            .save_to_disk(app_secret_state.inner().as_slice())
+            .await
+            .map_err(|e| e.to_string())?;
     }
+    Ok(())
 }
 
 #[tauri::command]
-fn update_tab_state(
+async fn update_tab_state(
     webview: tauri::Webview<tauri::Wry>,
     tab_id: String,
     title: String,
     url: String,
     state: tauri::State<'_, Arc<tokio::sync::Mutex<AppState>>>,
     _app_secret_state: tauri::State<'_, Arc<Vec<u8>>>,
-) {
-    if !is_trusted_origin(&webview) {
-        return; // Deny access for untrusted origins
+    config: tauri::State<'_, LotionConfig>,
+) -> Result<(), String> {
+    if !is_trusted_origin(&webview, &config) {
+        return Err("Untrusted origin".into());
     }
 
-    // Additional validation: Ensure the URL provided by the webview matches the actual webview URL.
     if let Ok(webview_url) = webview.url() {
         if webview_url.as_str() != url {
-            log::warn!(
-                "Origin {} attempted to update tab state with mismatched URL. Provided: {}, Actual: {}",
-                webview_url,
-                url,
-                webview_url.as_str()
-            );
-            return;
+            tracing::warn!("Origin {} mismatched URL", webview_url);
+            return Err("Mismatched URL".into());
         }
-    } else {
-        log::warn!("Could not determine webview URL for origin validation in update_tab_state.");
-        return;
     }
 
-    let mut app_state = state.blocking_lock();
+    let mut app_state = state.lock().await;
 
     // Check if state actually changed to avoid excessive disk I/O
     let should_save = if let Some(existing) = app_state.tabs.get(&tab_id) {
@@ -208,7 +216,7 @@ fn update_tab_state(
     };
 
     if !should_save {
-        return;
+        return Ok(());
     }
 
     // Update or Insert TabState
@@ -231,12 +239,8 @@ fn update_tab_state(
     }
 
     NEEDS_SAVE.store(true, Ordering::Relaxed);
-    log::debug!(
-        "[lotion-state] Marked state for delayed save: {} (title: {}, url: {})",
-        tab_id,
-        title,
-        url
-    );
+    tracing::debug!("Marked state for delayed save");
+    Ok(())
 }
 
 #[tauri::command]
@@ -244,14 +248,16 @@ fn minimize_window(
     webview: tauri::Webview<tauri::Wry>,
     window_id: String,
     app: tauri::AppHandle<tauri::Wry>,
-) {
-    if !is_trusted_origin(&webview) {
-        return; // Deny access for untrusted origins
+    config: tauri::State<'_, LotionConfig>,
+) -> Result<(), String> {
+    if !is_trusted_origin(&webview, &config) {
+        return Err("Untrusted origin".into());
     }
-    log::info!("CMD: minimize_window for {}", window_id);
+    tracing::info!("CMD: minimize_window for {}", window_id);
     if let Some(window) = app.get_webview_window(&window_id) {
-        let _ = window.minimize();
+        window.minimize().map_err(|e| e.to_string())?;
     }
+    Ok(())
 }
 
 #[tauri::command]
@@ -259,18 +265,20 @@ fn maximize_window(
     webview: tauri::Webview<tauri::Wry>,
     window_id: String,
     app: tauri::AppHandle<tauri::Wry>,
-) {
-    if !is_trusted_origin(&webview) {
-        return; // Deny access for untrusted origins
+    config: tauri::State<'_, LotionConfig>,
+) -> Result<(), String> {
+    if !is_trusted_origin(&webview, &config) {
+        return Err("Untrusted origin".into());
     }
-    log::info!("CMD: maximize_window for {}", window_id);
+    tracing::info!("CMD: maximize_window for {}", window_id);
     if let Some(window) = app.get_webview_window(&window_id) {
         if let Ok(true) = window.is_maximized() {
-            let _ = window.unmaximize();
+            window.unmaximize().map_err(|e| e.to_string())?;
         } else {
-            let _ = window.maximize();
+            window.maximize().map_err(|e| e.to_string())?;
         }
     }
+    Ok(())
 }
 
 #[tauri::command]
@@ -278,20 +286,26 @@ fn close_window(
     webview: tauri::Webview<tauri::Wry>,
     window_id: String,
     app: tauri::AppHandle<tauri::Wry>,
-) {
-    if !is_trusted_origin(&webview) {
-        return; // Deny access for untrusted origins
+    config: tauri::State<'_, LotionConfig>,
+) -> Result<(), String> {
+    if !is_trusted_origin(&webview, &config) {
+        return Err("Untrusted origin".into());
     }
-    log::info!("CMD: close_window for {}", window_id);
+    tracing::info!("CMD: close_window for {}", window_id);
     if let Some(window) = app.get_webview_window(&window_id) {
-        let _ = window.close();
+        window.close().map_err(|e| e.to_string())?;
     }
+    Ok(())
 }
 
 #[tauri::command]
-fn log_network_event(webview: tauri::Webview<tauri::Wry>, _event: String) {
-    if !is_trusted_origin(&webview) {
-        return; // Deny access for untrusted origins
+fn log_network_event(
+    webview: tauri::Webview<tauri::Wry>,
+    _event: String,
+    config: tauri::State<'_, LotionConfig>,
+) -> Result<(), String> {
+    if !is_trusted_origin(&webview, &config) {
+        return Err("Untrusted origin".into());
     }
 
     // Privacy: Only log in debug builds to prevent sensitive URL/metadata leakage in prod logs.
@@ -303,8 +317,9 @@ fn log_network_event(webview: tauri::Webview<tauri::Wry>, _event: String) {
         } else {
             _event
         };
-        log::debug!("[lotion-net] {}", truncated_event);
+        tracing::debug!("[lotion-net] {}", truncated_event);
     }
+    Ok(())
 }
 
 fn main() {
@@ -329,8 +344,10 @@ fn main() {
     if std::env::var("RUST_LOG").is_err() {
         std::env::set_var("RUST_LOG", "info");
     }
-    env_logger::init();
-    log::info!("Starting Lotion-rs...");
+    tracing_subscriber::fmt()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .init();
+    tracing::info!("Starting Lotion-rs...");
 
     // Get or create application secret
     let app_secret =
@@ -339,14 +356,17 @@ fn main() {
 
     // Load user config
     let config = LotionConfig::load();
-    log::info!(
+    tracing::info!(
         "Config: theme={}, restore_tabs={}",
         config.active_theme,
         config.restore_tabs
     );
 
     // Load saved state (if any)
-    let app_state = AppState::load_from_disk(&app_secret_arc).unwrap_or_default();
+    let app_state = tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(AppState::load_from_disk(&app_secret_arc))
+        .unwrap_or_default();
     let app_state = Arc::new(tokio::sync::Mutex::new(app_state));
 
     // Initialize Concrete Modules
@@ -365,10 +385,10 @@ fn main() {
         .plugin(tauri_plugin_shell::init())
         .on_window_event(|window, event| match event {
             tauri::WindowEvent::CloseRequested { .. } => {
-                log::info!("WINDOW EVENT [{}]: CloseRequested", window.label());
+                tracing::info!("WINDOW EVENT [{}]: CloseRequested", window.label());
             }
             tauri::WindowEvent::Focused(focused) => {
-                log::debug!("WINDOW EVENT [{}]: Focused({})", window.label(), focused);
+                tracing::debug!("WINDOW EVENT [{}]: Focused({})", window.label(), focused);
             }
             _ => {}
         })
@@ -427,10 +447,10 @@ fn main() {
                         let app_state_lock =
                             state_save_handle.state::<Arc<tokio::sync::Mutex<AppState>>>();
                         let app_state = app_state_lock.lock().await;
-                        if let Err(e) = app_state.save_to_disk(&state_save_secret) {
-                            log::error!("[lotion-state] Background save failed: {}", e);
+                        if let Err(e) = app_state.save_to_disk(&state_save_secret).await {
+                            tracing::error!("[lotion-state] Background save failed: {}", e);
                         } else {
-                            log::info!("[lotion-state] Background state save completed.");
+                            tracing::info!("[lotion-state] Background state save completed.");
                         }
                     }
                 }
@@ -440,7 +460,7 @@ fn main() {
             handle.on_menu_event(move |app_handle, event| {
                 match event.id.as_ref() {
                     "preferences" => {
-                        log::info!("Menu: Preferences requested");
+                        tracing::info!("Menu: Preferences requested");
                         // Future: open preferences window
                     }
                     "quit" => {
@@ -463,16 +483,16 @@ fn main() {
                 Ok(wc) => {
                     wc.setup_listeners(handle.clone());
                     if let Err(e) = wc.setup_tabs(&handle) {
-                        log::error!("Failed to set up tabs: {}", e);
+                        tracing::error!("Failed to set up tabs: {}", e);
                     }
-                    log::info!("WindowController initialized and set up.");
+                    tracing::info!("WindowController initialized and set up.");
                 }
                 Err(e) => {
-                    log::error!("Failed to create WindowController: {}", e);
+                    tracing::error!("Failed to create WindowController: {}", e);
                 }
             }
 
-            log::info!("Tauri background layer initialized.");
+            tracing::info!("Tauri background layer initialized.");
             Ok(())
         })
         .run(tauri::generate_context!())

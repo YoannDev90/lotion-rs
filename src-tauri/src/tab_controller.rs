@@ -40,7 +40,7 @@ impl<R: Runtime> TabController<R> {
         window.show()?;
         window.set_focus()?;
 
-        log::info!(
+        tracing::info!(
             "Navigated window {} to tab: {} with URL: {}",
             window_id,
             tab_id,
@@ -139,7 +139,7 @@ impl<R: Runtime> TabController<R> {
     }
 
     pub fn destroy(&self) -> tauri::Result<()> {
-        log::info!("Cleaning tab context: {}", self.tab_id);
+        tracing::info!("Cleaning tab context: {}", self.tab_id);
         let _ = self.webview.navigate("about:blank".parse().unwrap());
         Ok(())
     }
@@ -152,7 +152,7 @@ pub fn spawn_secure_popup<R: Runtime>(
 ) {
     if let Some(orchestrator) = app.try_state::<Arc<dyn crate::traits::TabOrchestrator<R>>>() {
         if let Err(e) = orchestrator.inner().create_tab(app, "main", url.as_str()) {
-            log::error!("Zero-Trust: Failed to route popup: {}", e);
+            tracing::error!("Zero-Trust: Failed to route popup: {}", e);
         }
     }
 }

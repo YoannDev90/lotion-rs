@@ -87,7 +87,7 @@ impl<R: Runtime> ThemingEngine<R> for ThemeManager {
             if path.exists() {
                 match std::fs::read_to_string(path) {
                     Ok(css) => {
-                        log::info!("Loaded custom CSS from {}", path.display());
+                        tracing::info!("Loaded custom CSS from {}", path.display());
                         // Escape backticks and backslashes to prevent JavaScript injection
                         // Note: backslashes must be escaped FIRST to avoid double-escaping 
                         // the backslashes added by escaping other characters.
@@ -102,7 +102,7 @@ impl<R: Runtime> ThemingEngine<R> for ThemeManager {
                             if (!style.parentElement) document.head.appendChild(style);
                         }})();", escaped_css);
                     }
-                    Err(e) => log::warn!("Failed to read custom CSS: {}", e),
+                    Err(e) => tracing::warn!("Failed to read custom CSS: {}", e),
                 }
             }
         }
@@ -127,7 +127,7 @@ impl<R: Runtime> ThemingEngine<R> for ThemeManager {
             .write()
             .expect("ThemeManager: active_theme write lock poisoned");
         *theme = name.to_string();
-        log::info!("Active theme changed to: {}", name);
+        tracing::info!("Active theme changed to: {}", name);
     }
 
     fn get_active_theme(&self) -> String {

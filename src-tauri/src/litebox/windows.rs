@@ -10,7 +10,7 @@ use windows_sys::Win32::System::JobObjects::*;
 use windows_sys::Win32::System::Threading::*;
 
 pub fn apply_windows_sandbox() -> Result<(), String> {
-    log::info!("Applying Windows Job Object restrictions");
+    tracing::info!("Applying Windows Job Object restrictions");
 
     #[cfg(target_os = "windows")]
     unsafe {
@@ -72,11 +72,11 @@ pub fn apply_windows_sandbox() -> Result<(), String> {
                 CloseHandle(job);
                 return Err(format!("Failed to assign process to JobObject: {}", err));
             } else {
-                log::warn!("Access denied assigning to JobObject (possibly already in a job); continuing with restricted token logic if applicable.");
+                tracing::warn!("Access denied assigning to JobObject (possibly already in a job); continuing with restricted token logic if applicable.");
             }
         }
 
-        log::info!("Job Object restrictions applied successfully.");
+        tracing::info!("Job Object restrictions applied successfully.");
         // We don't CloseHandle(job) yet as we want the job to stay alive with the process
     }
 

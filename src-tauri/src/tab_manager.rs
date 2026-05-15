@@ -86,7 +86,7 @@ impl<R: Runtime> TabManager<R> {
             .expect("TabManager: tabs write lock poisoned")
             .insert(tab_id.clone(), Arc::new(tab_controller));
 
-        log::info!("TabManager: Created tab {}", tab_id);
+        tracing::info!("TabManager: Created tab {}", tab_id);
         Ok(tab_id)
     }
 

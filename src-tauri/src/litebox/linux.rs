@@ -6,7 +6,7 @@
 use std::fs;
 
 pub fn apply_linux_sandbox() -> Result<(), String> {
-    log::info!("Applying Linux filesystem/capability restrictions");
+    tracing::info!("Applying Linux filesystem/capability restrictions");
 
     #[cfg(target_os = "linux")]
     unsafe {
@@ -31,23 +31,23 @@ pub fn apply_linux_sandbox() -> Result<(), String> {
 
             if err.raw_os_error() == Some(1) {
                 // EPERM
-                log::warn!("LiteBox: Namespace isolation failed (EPERM). Falling back to basic process hardening.");
+                tracing::warn!("LiteBox: Namespace isolation failed (EPERM). Falling back to basic process hardening.");
             } else {
-                log::error!("{}", error_message);
+                tracing::error!("{}", error_message);
                 // FAIL-CLOSED: In a Zero-Trust model, we must NOT continue without isolation.
                 return Err(error_message);
             }
         } else {
-            log::info!("LiteBox: Full namespace isolation enforced (NS, UTS, IPC, PID, NET).");
+            tracing::info!("LiteBox: Full namespace isolation enforced (NS, UTS, IPC, PID, NET).");
         }
 
         // 2. Disable core dumps and ptrace attachments
         libc::prctl(libc::PR_SET_DUMPABLE, 0, 0, 0, 0);
-        log::info!("LiteBox: Process dumpable flag disabled.");
+        tracing::info!("LiteBox: Process dumpable flag disabled.");
 
         // 3. Prevent gaining new privileges
         libc::prctl(libc::PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0);
-        log::info!("LiteBox: PR_SET_NO_NEW_PRIVS enforced.");
+        tracing::info!("LiteBox: PR_SET_NO_NEW_PRIVS enforced.");
 
         // 4. Drop all capabilities
         // Note: This requires the process to have some caps to begin with or be root.

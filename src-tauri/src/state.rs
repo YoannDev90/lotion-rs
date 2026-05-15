@@ -125,17 +125,20 @@ impl AppState {
             .join("state.json")
     }
 
-    /// Save application state to disk.
-    pub fn save_to_disk(&self, app_secret: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
+    /// Save application state to disk asynchronously.
+    pub async fn save_to_disk(
+        &self,
+        app_secret: &[u8],
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let path = Self::state_path();
         if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent)?;
+            tokio::fs::create_dir_all(parent).await?;
         }
 
         let key = get_encryption_key(app_secret);
         let plaintext = serde_json::to_string(self)?;
         let (ciphertext, nonce) = encrypt_data(plaintext.as_bytes(), &key)
-            .map_err(|e| Box::<dyn std::error::Error>::from(e))?;
+            .map_err(|e| Box::<dyn std::error::Error + Send + Sync>::from(e))?;
 
         let encrypted_state = EncryptedState {
             data: general_purpose::STANDARD.encode(&ciphertext),
@@ -143,17 +146,17 @@ impl AppState {
         };
         let json = serde_json::to_string_pretty(&encrypted_state)?;
 
-        std::fs::write(&path, json)?;
-        log::info!("Encrypted AppState saved to {}", path.display());
+        tokio::fs::write(&path, json).await?;
+        tracing::info!("Encrypted AppState saved to {}", path.display());
         Ok(())
     }
 
-    /// Load application state from disk.
-    pub fn load_from_disk(app_secret: &[u8]) -> Option<Self> {
+    /// Load application state from disk asynchronously.
+    pub async fn load_from_disk(app_secret: &[u8]) -> Option<Self> {
         let path = Self::state_path();
         if path.exists() {
             let key = get_encryption_key(app_secret);
-            match std::fs::read_to_string(&path) {
+            match tokio::fs::read_to_string(&path).await {
                 Ok(contents) => {
                     // Try to load as encrypted state first
                     if let Ok(encrypted_state) = serde_json::from_str::<EncryptedState>(&contents) {
@@ -161,7 +164,7 @@ impl AppState {
                             match general_purpose::STANDARD.decode(&encrypted_state.data) {
                                 Ok(d) => d,
                                 Err(e) => {
-                                    log::warn!("Failed to base64 decode encrypted data: {}", e);
+                                    tracing::warn!("Failed to base64 decode encrypted data: {}", e);
                                     return None;
                                 }
                             };
@@ -169,7 +172,7 @@ impl AppState {
                             match general_purpose::STANDARD.decode(&encrypted_state.nonce) {
                                 Ok(n) => n,
                                 Err(e) => {
-                                    log::warn!("Failed to base64 decode nonce: {}", e);
+                                    tracing::warn!("Failed to base64 decode nonce: {}", e);
                                     return None;
                                 }
                             };
@@ -179,19 +182,24 @@ impl AppState {
                                 Ok(plaintext) => match serde_json::from_str::<AppState>(&plaintext)
                                 {
                                     Ok(state) => {
-                                        log::info!(
+                                        tracing::info!(
                                             "Encrypted AppState loaded from {}",
                                             path.display()
                                         );
                                         return Some(state);
                                     }
-                                    Err(e) => log::warn!("Failed to parse decrypted state: {}", e),
+                                    Err(e) => {
+                                        tracing::warn!("Failed to parse decrypted state: {}", e)
+                                    }
                                 },
                                 Err(e) => {
-                                    log::warn!("Failed to convert decrypted bytes to string: {}", e)
+                                    tracing::warn!(
+                                        "Failed to convert decrypted bytes to string: {}",
+                                        e
+                                    )
                                 }
                             },
-                            Err(e) => log::warn!("Failed to decrypt state file: {}", e),
+                            Err(e) => tracing::warn!("Failed to decrypt state file: {}", e),
                         }
                     }
 
@@ -199,15 +207,15 @@ impl AppState {
                     // This branch will be executed if deserialization to EncryptedState fails,
                     // which means it's likely an old unencrypted file.
                     if let Ok(state) = serde_json::from_str::<AppState>(&contents) {
-                        log::warn!(
+                        tracing::warn!(
                             "Loaded unencrypted AppState from {}. Please re-save to encrypt.",
                             path.display()
                         );
                         return Some(state);
                     }
-                    log::warn!("Failed to load state file as either encrypted or plaintext.");
+                    tracing::warn!("Failed to load state file as either encrypted or plaintext.");
                 }
-                Err(e) => log::warn!("Failed to read state file: {}", e),
+                Err(e) => tracing::warn!("Failed to read state file: {}", e),
             }
         }
         None

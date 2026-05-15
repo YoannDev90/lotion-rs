@@ -9,6 +9,16 @@ pub struct LotionConfig {
     pub custom_css_path: Option<PathBuf>,
     pub restore_tabs: bool,
     pub window: WindowConfig,
+    #[serde(default = "default_trusted_domains")]
+    pub trusted_domains: Vec<String>,
+}
+
+fn default_trusted_domains() -> Vec<String> {
+    vec![
+        "https://www.notion.so".to_string(),
+        "https://notion.so".to_string(),
+        "about:blank".to_string(),
+    ]
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -33,6 +43,7 @@ impl Default for LotionConfig {
                 y: None,
                 maximized: false,
             },
+            trusted_domains: default_trusted_domains(),
         }
     }
 }
@@ -58,13 +69,13 @@ impl LotionConfig {
         let new_dir = Self::config_dir();
 
         if old_dir.exists() && !new_dir.exists() {
-            log::info!(
+            tracing::info!(
                 "Migrating legacy config from {} to {}",
                 old_dir.display(),
                 new_dir.display()
             );
             if let Err(e) = fs::create_dir_all(&new_dir) {
-                log::error!("Failed to create new config dir: {}", e);
+                tracing::error!("Failed to create new config dir: {}", e);
                 return;
             }
 
@@ -72,7 +83,7 @@ impl LotionConfig {
             let old_config = old_dir.join("config.toml");
             if old_config.exists() {
                 if let Err(e) = fs::copy(&old_config, new_dir.join("config.toml")) {
-                    log::error!("Failed to migrate config.toml: {}", e);
+                    tracing::error!("Failed to migrate config.toml: {}", e);
                 }
             }
 
@@ -80,7 +91,7 @@ impl LotionConfig {
             let old_state = old_dir.join("state.json");
             if old_state.exists() {
                 if let Err(e) = fs::copy(&old_state, new_dir.join("state.json")) {
-                    log::error!("Failed to migrate state.json: {}", e);
+                    tracing::error!("Failed to migrate state.json: {}", e);
                 }
             }
         }
@@ -99,33 +110,33 @@ impl LotionConfig {
                             if let Some(ref path) = config.custom_css_path {
                                 let custom_themes_dir = Self::config_dir().join("custom_themes");
                                 if !path.starts_with(&custom_themes_dir) {
-                                    log::warn!("Custom CSS path '{}' is outside the designated custom themes directory. Discarding for security.", path.display());
+                                    tracing::warn!("Custom CSS path '{}' is outside the designated custom themes directory. Discarding for security.", path.display());
                                     config.custom_css_path = None;
                                 } else if !path.extension().map_or(false, |ext| ext == "css") {
-                                    log::warn!("Custom CSS path '{}' does not have a .css extension. Discarding for security.", path.display());
+                                    tracing::warn!("Custom CSS path '{}' does not have a .css extension. Discarding for security.", path.display());
                                     config.custom_css_path = None;
                                 } else if !path.exists() {
-                                    log::warn!(
+                                    tracing::warn!(
                                         "Custom CSS path '{}' does not exist. Discarding.",
                                         path.display()
                                     );
                                     config.custom_css_path = None;
                                 }
                             }
-                            log::info!("Config loaded from {}", path.display());
+                            tracing::info!("Config loaded from {}", path.display());
                             return config;
                         }
                         Err(e) => {
-                            log::warn!("Failed to parse config, using defaults: {}", e);
+                            tracing::warn!("Failed to parse config, using defaults: {}", e);
                         }
                     }
                 } // End of Ok(contents) arm
                 Err(e) => {
-                    log::warn!("Failed to read config file, using defaults: {}", e);
+                    tracing::warn!("Failed to read config file, using defaults: {}", e);
                 }
             }
         } else {
-            log::info!(
+            tracing::info!(
                 "No config file found, creating default at {}",
                 path.display()
             );
@@ -144,7 +155,7 @@ impl LotionConfig {
         let contents = toml::to_string_pretty(self)?;
         fs::write(Self::config_path(), contents)?;
 
-        log::info!("Config saved to {}", Self::config_path().display());
+        tracing::info!("Config saved to {}", Self::config_path().display());
         Ok(())
     }
 }

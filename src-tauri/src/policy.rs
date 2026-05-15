@@ -40,31 +40,31 @@ impl PolicyManager {
 
 impl PolicyEnforcer for PolicyManager {
     fn validate_url(&self, url: &str) -> bool {
-        log::debug!("PolicyManager: Validating URL: {}", url);
+        tracing::debug!("PolicyManager: Validating URL: {}", url);
         // Parse URL and check if host is in allowed_domains
         if let Ok(parsed_url) = url::Url::parse(url) {
             if parsed_url.scheme() != "https" {
-                log::warn!("PolicyManager: BLOCKED non-HTTPS URL scheme: {}", url);
+                tracing::warn!("PolicyManager: BLOCKED non-HTTPS URL scheme: {}", url);
                 return false;
             }
 
             if let Some(host) = parsed_url.host_str() {
                 if self.is_official_notion(host) {
-                    log::debug!("PolicyManager: ALLOWED official Notion domain: {}", host);
+                    tracing::debug!("PolicyManager: ALLOWED official Notion domain: {}", host);
                     return true;
                 }
 
                 if self.is_trusted_oauth(host) {
-                    log::debug!("PolicyManager: ALLOWED OAuth provider: {}", host);
+                    tracing::debug!("PolicyManager: ALLOWED OAuth provider: {}", host);
                     return true;
                 }
 
-                log::warn!("PolicyManager: BLOCKED unauthorized endpoint: {}", host);
+                tracing::warn!("PolicyManager: BLOCKED unauthorized endpoint: {}", host);
                 return false;
             }
         }
 
-        log::warn!(
+        tracing::warn!(
             "PolicyManager: BLOCKED malformed or unsupported URL: {}",
             url
         );
@@ -94,7 +94,7 @@ impl PolicyEnforcer for PolicyManager {
                     .iter()
                     .any(|t| host == *t || host.ends_with(&format!(".{}", t)))
                 {
-                    log::warn!("PolicyManager: BLOCKED tracker/telemetry domain: {}", host);
+                    tracing::warn!("PolicyManager: BLOCKED tracker/telemetry domain: {}", host);
                     return false;
                 }
             }
@@ -103,7 +103,7 @@ impl PolicyEnforcer for PolicyManager {
                 "https" => true,
                 "mailto" => true,
                 _ => {
-                    log::warn!(
+                    tracing::warn!(
                         "PolicyManager: BLOCKED unsafe external link protocol: {}",
                         parsed_url.scheme()
                     );
