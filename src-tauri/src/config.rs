@@ -6,11 +6,17 @@ use std::path::PathBuf;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LotionConfig {
     pub active_theme: String,
+    #[serde(default = "default_locale")]
+    pub locale: String,
     pub custom_css_path: Option<PathBuf>,
     pub restore_tabs: bool,
     pub window: WindowConfig,
     #[serde(default = "default_trusted_domains")]
     pub trusted_domains: Vec<String>,
+}
+
+fn default_locale() -> String {
+    "en_US".to_string()
 }
 
 fn default_trusted_domains() -> Vec<String> {
@@ -34,6 +40,7 @@ impl Default for LotionConfig {
     fn default() -> Self {
         Self {
             active_theme: "dracula".to_string(),
+            locale: default_locale(),
             custom_css_path: None,
             restore_tabs: true,
             window: WindowConfig {

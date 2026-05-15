@@ -13,6 +13,7 @@ use std::io::{Read, Write};
 use std::os::unix::fs::PermissionsExt; // Specific import for unix permissions
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::RwLock;
 use std::time::Duration;
 use tauri::Manager;
 
@@ -82,14 +83,24 @@ fn is_trusted_origin<R: tauri::Runtime>(
     }
 }
 
+type SharedConfig = Arc<RwLock<LotionConfig>>;
+
+fn trusted_origin_snapshot<R: tauri::Runtime>(
+    webview: &tauri::Webview<R>,
+    config: &SharedConfig,
+) -> Result<bool, String> {
+    let config_snapshot = config.read().map_err(|e| e.to_string())?.clone();
+    Ok(is_trusted_origin(webview, &config_snapshot))
+}
+
 #[tauri::command]
 async fn get_window_tabs(
     webview: tauri::Webview<tauri::Wry>,
     window_id: String,
     state: tauri::State<'_, Arc<tokio::sync::Mutex<AppState>>>,
-    config: tauri::State<'_, LotionConfig>,
+    config: tauri::State<'_, SharedConfig>,
 ) -> Result<Vec<lotion_rs::state::TabState>, String> {
-    if !is_trusted_origin(&webview, &config) {
+    if !trusted_origin_snapshot(&webview, &config)? {
         return Err("Untrusted origin".into());
     }
     tracing::info!("get_window_tabs called from origin: {:?}", webview.url());
@@ -111,9 +122,9 @@ fn switch_tab(
     webview: tauri::Webview<tauri::Wry>,
     tab_id: String,
     orchestrator: tauri::State<'_, Arc<dyn lotion_rs::traits::TabOrchestrator<tauri::Wry>>>,
-    config: tauri::State<'_, LotionConfig>,
+    config: tauri::State<'_, SharedConfig>,
 ) -> Result<(), String> {
-    if !is_trusted_origin(&webview, &config) {
+    if !trusted_origin_snapshot(&webview, &config)? {
         return Err("Untrusted origin".into());
     }
     orchestrator.show_tab(&tab_id).map_err(|e| e.to_string())?;
@@ -128,9 +139,9 @@ async fn close_tab(
     orchestrator: tauri::State<'_, Arc<dyn lotion_rs::traits::TabOrchestrator<tauri::Wry>>>,
     state: tauri::State<'_, Arc<tokio::sync::Mutex<AppState>>>,
     app_secret_state: tauri::State<'_, Arc<Vec<u8>>>,
-    config: tauri::State<'_, LotionConfig>,
+    config: tauri::State<'_, SharedConfig>,
 ) -> Result<(), String> {
-    if !is_trusted_origin(&webview, &config) {
+    if !trusted_origin_snapshot(&webview, &config)? {
         return Err("Untrusted origin".into());
     }
     orchestrator
@@ -163,9 +174,9 @@ async fn new_tab(
     orchestrator: tauri::State<'_, Arc<dyn lotion_rs::traits::TabOrchestrator<tauri::Wry>>>,
     state: tauri::State<'_, Arc<tokio::sync::Mutex<AppState>>>,
     app_secret_state: tauri::State<'_, Arc<Vec<u8>>>,
-    config: tauri::State<'_, LotionConfig>,
+    config: tauri::State<'_, SharedConfig>,
 ) -> Result<(), String> {
-    if !is_trusted_origin(&webview, &config) {
+    if !trusted_origin_snapshot(&webview, &config)? {
         return Err("Untrusted origin".into());
     }
     let notion_url = "https://www.notion.so";
@@ -193,9 +204,9 @@ async fn update_tab_state(
     url: String,
     state: tauri::State<'_, Arc<tokio::sync::Mutex<AppState>>>,
     _app_secret_state: tauri::State<'_, Arc<Vec<u8>>>,
-    config: tauri::State<'_, LotionConfig>,
+    config: tauri::State<'_, SharedConfig>,
 ) -> Result<(), String> {
-    if !is_trusted_origin(&webview, &config) {
+    if !trusted_origin_snapshot(&webview, &config)? {
         return Err("Untrusted origin".into());
     }
 
@@ -248,9 +259,10 @@ fn minimize_window(
     webview: tauri::Webview<tauri::Wry>,
     window_id: String,
     app: tauri::AppHandle<tauri::Wry>,
-    config: tauri::State<'_, LotionConfig>,
+    config: tauri::State<'_, SharedConfig>,
 ) -> Result<(), String> {
-    if !is_trusted_origin(&webview, &config) {
+    let config_guard = config.read().map_err(|e| e.to_string())?;
+    if !is_trusted_origin(&webview, &config_guard) {
         return Err("Untrusted origin".into());
     }
     tracing::info!("CMD: minimize_window for {}", window_id);
@@ -265,9 +277,10 @@ fn maximize_window(
     webview: tauri::Webview<tauri::Wry>,
     window_id: String,
     app: tauri::AppHandle<tauri::Wry>,
-    config: tauri::State<'_, LotionConfig>,
+    config: tauri::State<'_, SharedConfig>,
 ) -> Result<(), String> {
-    if !is_trusted_origin(&webview, &config) {
+    let config_guard = config.read().map_err(|e| e.to_string())?;
+    if !is_trusted_origin(&webview, &config_guard) {
         return Err("Untrusted origin".into());
     }
     tracing::info!("CMD: maximize_window for {}", window_id);
@@ -286,9 +299,10 @@ fn close_window(
     webview: tauri::Webview<tauri::Wry>,
     window_id: String,
     app: tauri::AppHandle<tauri::Wry>,
-    config: tauri::State<'_, LotionConfig>,
+    config: tauri::State<'_, SharedConfig>,
 ) -> Result<(), String> {
-    if !is_trusted_origin(&webview, &config) {
+    let config_guard = config.read().map_err(|e| e.to_string())?;
+    if !is_trusted_origin(&webview, &config_guard) {
         return Err("Untrusted origin".into());
     }
     tracing::info!("CMD: close_window for {}", window_id);
@@ -302,9 +316,10 @@ fn close_window(
 fn log_network_event(
     webview: tauri::Webview<tauri::Wry>,
     _event: String,
-    config: tauri::State<'_, LotionConfig>,
+    config: tauri::State<'_, SharedConfig>,
 ) -> Result<(), String> {
-    if !is_trusted_origin(&webview, &config) {
+    let config_guard = config.read().map_err(|e| e.to_string())?;
+    if !is_trusted_origin(&webview, &config_guard) {
         return Err("Untrusted origin".into());
     }
 
@@ -319,6 +334,52 @@ fn log_network_event(
         };
         tracing::debug!("[lotion-net] {}", truncated_event);
     }
+    Ok(())
+}
+
+#[tauri::command]
+fn get_preferences(config: tauri::State<'_, SharedConfig>) -> Result<LotionConfig, String> {
+    Ok(config.read().map_err(|e| e.to_string())?.clone())
+}
+
+#[tauri::command]
+fn save_preferences(
+    app: tauri::AppHandle<tauri::Wry>,
+    config: tauri::State<'_, SharedConfig>,
+    theming: tauri::State<'_, Arc<dyn lotion_rs::traits::ThemingEngine<tauri::Wry>>>,
+    orchestrator: tauri::State<'_, Arc<dyn lotion_rs::traits::TabOrchestrator<tauri::Wry>>>,
+    i18n: tauri::State<'_, I18nManager>,
+    prefs: LotionConfig,
+) -> Result<(), String> {
+    prefs.save().map_err(|e| e.to_string())?;
+
+    {
+        let mut config_guard = config.write().map_err(|e| e.to_string())?;
+        *config_guard = prefs.clone();
+    }
+
+    theming.set_active_theme(&prefs.active_theme);
+    {
+        let tab_ids = orchestrator.get_tab_ids();
+        for tab_id in tab_ids {
+            let _ = orchestrator.inject_theme_into_tab(&app, &tab_id, &prefs.active_theme);
+        }
+    }
+
+    i18n.load_locale(&app, &prefs.locale);
+
+    if let Some(window) = app.get_webview_window("main") {
+        if prefs.window.maximized {
+            let _ = window.maximize();
+        } else {
+            let _ = window.unmaximize();
+            let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize {
+                width: prefs.window.width as u32,
+                height: prefs.window.height as u32,
+            }));
+        }
+    }
+
     Ok(())
 }
 
@@ -355,12 +416,16 @@ fn main() {
     let app_secret_arc = Arc::new(app_secret);
 
     // Load user config
-    let config = LotionConfig::load();
-    tracing::info!(
-        "Config: theme={}, restore_tabs={}",
-        config.active_theme,
-        config.restore_tabs
-    );
+    let config = Arc::new(RwLock::new(LotionConfig::load()));
+    {
+        let config_guard = config.read().expect("Config lock poisoned");
+        tracing::info!(
+            "Config: theme={}, locale={}, restore_tabs={}",
+            config_guard.active_theme,
+            config_guard.locale,
+            config_guard.restore_tabs
+        );
+    }
 
     // Load saved state (if any)
     let app_state = tokio::runtime::Runtime::new()
@@ -372,9 +437,16 @@ fn main() {
     // Initialize Concrete Modules
     let security = Arc::new(SecurityModule::new());
     let policy = Arc::new(PolicyManager::new());
+    let config_for_theme = {
+        let config_guard = config.read().expect("Config lock poisoned");
+        (
+            config_guard.active_theme.clone(),
+            config_guard.custom_css_path.clone(),
+        )
+    };
     let theming = Arc::new(ThemeManager::with_config(
-        &config.active_theme,
-        config.custom_css_path.clone(),
+        &config_for_theme.0,
+        config_for_theme.1,
     ));
     let tab_manager = Arc::new(lotion_rs::tab_manager::TabManager::<tauri::Wry>::new(
         security.litebox.clone(),
@@ -412,7 +484,9 @@ fn main() {
             minimize_window,
             maximize_window,
             close_window,
-            log_network_event
+            log_network_event,
+            get_preferences,
+            save_preferences
         ])
         .setup(move |app| {
             // Initialize modules in Tauri state FIRST as trait objects where expected
@@ -422,7 +496,15 @@ fn main() {
             app.manage::<Arc<dyn lotion_rs::traits::TabOrchestrator<tauri::Wry>>>(tab_manager);
             app.manage(config);
             app.manage(app_state);
-            app.manage(I18nManager::new());
+            let i18n_manager = I18nManager::new();
+            if let Ok(config_guard) = app
+                .state::<Arc<RwLock<LotionConfig>>>()
+                .read()
+                .map_err(|_| ())
+            {
+                i18n_manager.load_locale(app.handle(), &config_guard.locale);
+            }
+            app.manage(i18n_manager);
             app.manage(SpellcheckManager::new());
             app.manage(app_secret_arc.clone()); // Manage the app_secret_arc
 
@@ -453,20 +535,6 @@ fn main() {
                             tracing::info!("[lotion-state] Background state save completed.");
                         }
                     }
-                }
-            });
-
-            // Global Menu Event Handler
-            handle.on_menu_event(move |app_handle, event| {
-                match event.id.as_ref() {
-                    "preferences" => {
-                        tracing::info!("Menu: Preferences requested");
-                        // Future: open preferences window
-                    }
-                    "quit" => {
-                        app_handle.exit(0);
-                    }
-                    _ => {}
                 }
             });
 

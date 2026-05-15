@@ -1,51 +1,25 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
+
 use tauri::{
-    menu::{AboutMetadata, MenuBuilder, MenuItem, SubmenuBuilder},
+    menu::{MenuBuilder, MenuItem, SubmenuBuilder},
     AppHandle, Manager, Runtime,
 };
 
 pub fn create_main_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
-    let pkg_info = app.package_info();
+    // Build the View submenu (themes, language, dev tools, reload/fullscreen)
 
-    // lotion-rs Menu
-    let lotion_menu = SubmenuBuilder::new(app, "lotion-rs")
-        .about(Some(AboutMetadata {
-            name: Some("lotion-rs".to_string()),
-
-            version: Some(pkg_info.version.to_string()),
-            ..Default::default()
-        }))
-        .separator()
-        .quit()
-        .build()?;
-
-    // Navigation Menu (Temporarily simplified or removed if not handled yet)
-    // Removed Back/Forward/Refresh/Home as they are not currently linked to handlers in this view.
-
-    // Edit Menu
-    let edit_menu = SubmenuBuilder::new(app, "Edit")
-        .undo()
-        .redo()
-        .separator()
-        .cut()
-        .copy()
-        .paste()
-        .select_all()
-        .build()?;
-
-    // Theme Submenu
     let theme_submenu = SubmenuBuilder::new(app, "Theme")
         .item(&MenuItem::with_id(
             app,
             "theme_light",
-            "Light (Default)",
+            "Light",
             true,
             None::<&str>,
         )?)
         .item(&MenuItem::with_id(
             app,
             "theme_dracula",
-            "Dracula",
+            "Dracula (Default)",
             true,
             None::<&str>,
         )?)
@@ -58,83 +32,135 @@ pub fn create_main_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
         )?)
         .build()?;
 
-    // View Menu
+    let lang_submenu = SubmenuBuilder::new(app, "Language")
+        .item(&MenuItem::with_id(
+            app,
+            "lang_en_US",
+            "English",
+            true,
+            None::<&str>,
+        )?)
+        .item(&MenuItem::with_id(
+            app,
+            "lang_fr_FR",
+            "Français",
+            true,
+            None::<&str>,
+        )?)
+        .item(&MenuItem::with_id(
+            app,
+            "lang_es_ES",
+            "Español",
+            true,
+            None::<&str>,
+        )?)
+        .item(&MenuItem::with_id(
+            app,
+            "lang_de_DE",
+            "Deutsch",
+            true,
+            None::<&str>,
+        )?)
+        .item(&MenuItem::with_id(
+            app,
+            "lang_ja_JP",
+            "日本語",
+            true,
+            None::<&str>,
+        )?)
+        .item(&MenuItem::with_id(
+            app,
+            "lang_zh_CN",
+            "中文",
+            true,
+            None::<&str>,
+        )?)
+        .build()?;
+
     let view_menu = SubmenuBuilder::new(app, "View")
         .item(&MenuItem::with_id(
             app,
             "reload",
             "Reload",
             true,
-            Some("F5"),
+            Some("CmdOrCtrl+R"),
+        )?)
+        .item(&MenuItem::with_id(
+            app,
+            "toggle_fullscreen",
+            "Toggle Fullscreen",
+            true,
+            Some("F11"),
         )?)
         .separator()
         .item(&theme_submenu)
+        .item(&lang_submenu)
         .separator()
         .item(&MenuItem::with_id(
             app,
             "toggle_dev_tools",
-            "Toggle Developer Tools",
+            "Developer Tools",
             true,
             Some("F12"),
         )?)
-        .separator()
-        .item(&MenuItem::with_id(
-            app,
-            "toggle_menu_bar",
-            "Toggle Menu Bar",
-            true,
-            Some("CmdOrCtrl+Shift+M"),
-        )?)
         .build()?;
 
-    let menu = MenuBuilder::new(app)
-        .item(&lotion_menu)
-        .item(&edit_menu)
-        .item(&view_menu)
-        .build()?;
+    let menu = MenuBuilder::new(app).item(&view_menu).build()?;
 
     app.set_menu(menu)?;
 
-    app.on_menu_event(move |app_handle, event| {
-        match event.id().as_ref() {
-            "toggle_dev_tools" => {
-                tracing::info!("Menu: Toggle Developer Tools (disabled in release)");
+    app.on_menu_event(move |app_handle, event| match event.id.as_ref() {
+        "reload" => {
+            if let Some(window) = app_handle.get_webview_window("main") {
+                let _ = window.eval("window.location.reload();");
             }
-            theme_id if theme_id.starts_with("theme_") => {
-                let theme_name = theme_id.replace("theme_", "");
-                tracing::info!("Menu: Switch theme to {}", theme_name);
+        }
+        "toggle_fullscreen" => {
+            if let Some(window) = app_handle.get_webview_window("main") {
+                let is_fs = window.is_fullscreen().unwrap_or(false);
+                let _ = window.set_fullscreen(!is_fs);
+            }
+        }
+        "toggle_dev_tools" => {
+            if let Some(window) = app_handle.get_webview_window("main") {
+                if window.is_devtools_open() {
+                    let _ = window.close_devtools();
+                } else {
+                    let _ = window.open_devtools();
+                }
+            }
+        }
+        theme_id if theme_id.starts_with("theme_") => {
+            let theme_name = theme_id.replace("theme_", "");
+            if let Some(theming) =
+                app_handle.try_state::<Arc<dyn crate::traits::ThemingEngine<R>>>()
+            {
+                theming.set_active_theme(&theme_name);
 
-                // Retrieve state manually to avoid borrowing issues
-                if let Some(theming) =
-                    app_handle.try_state::<Arc<dyn crate::traits::ThemingEngine<R>>>()
+                if let Some(orchestrator) =
+                    app_handle.try_state::<Arc<dyn crate::traits::TabOrchestrator<R>>>()
                 {
-                    theming.set_active_theme(&theme_name);
-
-                    if let Some(orchestrator) =
-                        app_handle.try_state::<Arc<dyn crate::traits::TabOrchestrator<R>>>()
-                    {
-                        let tab_ids = orchestrator.get_tab_ids();
-                        for tab_id in tab_ids {
-                            let _ = orchestrator.inject_theme_into_tab(
-                                app_handle,
-                                &tab_id,
-                                &theme_name,
-                            );
-                        }
+                    let tab_ids = orchestrator.get_tab_ids();
+                    for tab_id in tab_ids {
+                        let _ =
+                            orchestrator.inject_theme_into_tab(app_handle, &tab_id, &theme_name);
                     }
+                }
 
-                    // Persist to config
-                    if let Some(config_state) =
-                        app_handle.try_state::<crate::config::LotionConfig>()
-                    {
-                        let mut config = config_state.inner().clone();
+                if let Some(config_state) =
+                    app_handle.try_state::<Arc<RwLock<crate::config::LotionConfig>>>()
+                {
+                    if let Ok(mut config) = config_state.write() {
                         config.active_theme = theme_name;
                         let _ = config.save();
                     }
                 }
             }
-            _ => {}
         }
+        lang_id if lang_id.starts_with("lang_") => {
+            tracing::info!("Menu: Switch language to {}", lang_id.replace("lang_", ""));
+        }
+        _ => {}
     });
 
     Ok(())
