@@ -33,16 +33,16 @@ curl -fsSL https://raw.githubusercontent.com/YoannDev90/lotion-rs/master/install
 
 ## Installation
 
-### 📦 Download Pre-built Packages
+### Download Pre-built Packages
 
 You can download the latest version for your platform here:
 
-- [🐧 Linux (.deb)](https://github.com/YoannDev90/lotion-rs/releases/latest/download/lotion-rs_amd64.deb)
-- [🐧 Linux (.AppImage)](https://github.com/YoannDev90/lotion-rs/releases/latest/download/lotion-rs.AppImage)
-- [🐧 Linux (.rpm)](https://github.com/YoannDev90/lotion-rs/releases/latest/download/lotion-rs.rpm)
-- [🍎 macOS Intel (x64 .dmg)](https://github.com/YoannDev90/lotion-rs/releases/latest/download/lotion-rs-x64.dmg)
-- [🍎 macOS Silicon (arm64 .dmg)](https://github.com/YoannDev90/lotion-rs/releases/latest/download/lotion-rs-arm64.dmg)
-- [🪟 Windows (x64 .exe)](https://github.com/YoannDev90/lotion-rs/releases/latest/download/lotion-rs-setup.exe)
+- [Linux (.deb)](https://github.com/YoannDev90/lotion-rs/releases/latest/download/lotion-rs_amd64.deb)
+- [Linux (.AppImage)](https://github.com/YoannDev90/lotion-rs/releases/latest/download/lotion-rs.AppImage)
+- [Linux (.rpm)](https://github.com/YoannDev90/lotion-rs/releases/latest/download/lotion-rs.rpm)
+- [macOS Intel (x64 .dmg)](https://github.com/YoannDev90/lotion-rs/releases/latest/download/lotion-rs-x64.dmg)
+- [macOS Silicon (arm64 .dmg)](https://github.com/YoannDev90/lotion-rs/releases/latest/download/lotion-rs-arm64.dmg)
+- [Windows (x64 .exe)](https://github.com/YoannDev90/lotion-rs/releases/latest/download/lotion-rs-setup.exe)
 
 ### Debian / Ubuntu
 
@@ -123,6 +123,8 @@ What that means in practice for Lotion-rs:
 - **macOS Support** — Universal binary for x64 and ARM64 (Apple Silicon).
 - **Spell Check** — Leverages the system WebView's built-in spell checking.
 - **Auto-Update** — Built-in update mechanism via Tauri's updater plugin.
+
+> **Note for Linux users:** Opening the Developer Tools (F12) for the first time may be slow on WebKitGTK. The inspector loads its resources lazily on first use, and under XWayland (currently required for KDE titlebar click support) the initial handshake adds noticeable latency. Subsequent openings are typically faster.
 
 ---
 

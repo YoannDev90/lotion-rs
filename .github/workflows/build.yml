@@ -6,7 +6,6 @@ name: Build
 on:
   push:
     branches: [main, develop, rust-version]
-    tags: ["v*"]
   pull_request:
     branches: [main, develop, rust-version]
   workflow_dispatch:
@@ -158,6 +157,14 @@ jobs:
           find src-tauri/target/${{ matrix.target }}/release/bundle \
             \( -name "*.deb" -o -name "*.rpm" -o -name "*.AppImage" -o -name "*.dmg" -o -name "*.exe" -o -name "*.msi" \) \
             -exec cp {} staging/ \;
+          # Copy the standalone executable binary
+          BINARY="src-tauri/target/${{ matrix.target }}/release/lotion-rs"
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            BINARY="${BINARY}.exe"
+          fi
+          if [ -f "$BINARY" ]; then
+            cp "$BINARY" staging/
+          fi
           ls -lh staging/
 
       - name: Upload bundle artifacts

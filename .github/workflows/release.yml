@@ -87,6 +87,8 @@ jobs:
           find src-tauri/target/x86_64-unknown-linux-gnu/release/bundle -name "*.deb" -exec cp {} staging/lotion-rs_amd64.deb \;
           find src-tauri/target/x86_64-unknown-linux-gnu/release/bundle -name "*.rpm" -exec cp {} staging/lotion-rs.rpm \;
           find src-tauri/target/x86_64-unknown-linux-gnu/release/bundle -name "*.AppImage" -exec cp {} staging/lotion-rs.AppImage \;
+          # Copy the standalone executable binary
+          cp src-tauri/target/x86_64-unknown-linux-gnu/release/lotion-rs staging/lotion-rs
           ls -lh staging/
 
       - uses: actions/upload-artifact@v4
@@ -148,6 +150,8 @@ jobs:
           mkdir -p staging
           find src-tauri/target/x86_64-apple-darwin/release/bundle -name "*.dmg" -exec cp {} staging/lotion-rs-x64.dmg \;
           find src-tauri/target/x86_64-apple-darwin/release/bundle -name "*.app.tar.gz" -exec cp {} staging/lotion-rs-macos-x64.app.tar.gz \;
+          # Copy the standalone executable binary
+          cp src-tauri/target/x86_64-apple-darwin/release/lotion-rs staging/lotion-rs-x64
           ls -lh staging/
 
       - uses: actions/upload-artifact@v4
@@ -209,6 +213,8 @@ jobs:
           mkdir -p staging
           find src-tauri/target/aarch64-apple-darwin/release/bundle -name "*.dmg" -exec cp {} staging/lotion-rs-arm64.dmg \;
           find src-tauri/target/aarch64-apple-darwin/release/bundle -name "*.app.tar.gz" -exec cp {} staging/lotion-rs-macos-arm64.app.tar.gz \;
+          # Copy the standalone executable binary
+          cp src-tauri/target/aarch64-apple-darwin/release/lotion-rs staging/lotion-rs-arm64
           ls -lh staging/
 
       - uses: actions/upload-artifact@v4
@@ -257,6 +263,8 @@ jobs:
         run: |
           mkdir -p staging
           find src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis -name "*.exe" -exec cp {} staging/lotion-rs-setup.exe \;
+          # Copy the standalone executable binary
+          cp src-tauri/target/x86_64-pc-windows-msvc/release/lotion-rs.exe staging/lotion-rs.exe
           ls -lh staging/
 
       - uses: actions/upload-artifact@v4

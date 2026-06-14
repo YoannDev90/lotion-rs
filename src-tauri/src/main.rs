@@ -388,6 +388,9 @@ fn main() {
     {
         std::env::set_var("NO_AT_BRIDGE", "1");
 
+        // Set app_id for Wayland so KDE can associate the window with the .desktop file
+        std::env::set_var("APP_ID", "lotion-rs");
+
         // KDE/Wayland Button Click Fix: Force native X11 Windowing instead of Wayland.
         // Tauri/WebKitGTK on Wayland often fails to route titlebar clicks properly to KWin.
         std::env::set_var("GDK_BACKEND", "x11");
@@ -455,6 +458,7 @@ fn main() {
     // Tauri Application Context
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_opener::init())
         .on_window_event(|window, event| match event {
             tauri::WindowEvent::CloseRequested { .. } => {
                 tracing::info!("WINDOW EVENT [{}]: CloseRequested", window.label());

@@ -13,7 +13,6 @@ pub struct WindowController<R: Runtime> {
 
 impl<R: Runtime> WindowController<R> {
     pub fn new(app: &AppHandle<R>, security: Arc<dyn SecuritySandbox>) -> tauri::Result<Self> {
-        // Create the main window with native decorations.
         #[allow(unused_mut)]
         let mut window_builder = WindowBuilder::new(
             app,
@@ -29,34 +28,22 @@ impl<R: Runtime> WindowController<R> {
         #[cfg(not(target_os = "macos"))]
         {
             window_builder = window_builder.decorations(true).shadow(true);
-            tracing::debug!("Window native decorations enabled for target_os");
-
-            // KDE/Linux specific: Ensure the icon is explicitly set from the assets
-            // and set the app_id to match the .desktop file for Wayland support.
-            let icon_path = std::path::PathBuf::from("assets/icon.png");
-            let icon = tauri::image::Image::from_path(icon_path).ok();
-            let icon = icon.or_else(|| app.default_window_icon().cloned());
-
-            if let Some(i) = icon {
-                window_builder = window_builder.icon(i).unwrap_or_else(|e| {
-                    tracing::warn!("Failed to set icon: {}", e);
-                    WindowBuilder::new(
-                        app,
-                        "main",
-                        tauri::WebviewUrl::External("about:blank".parse().unwrap()),
-                    )
-                    .title("lotion-rs")
-                    .inner_size(1200.0, 768.0)
-                    .center()
-                    .focused(true)
-                    .visible(false)
-                    .decorations(true)
-                    .shadow(true)
-                });
-            }
         }
 
         let window = window_builder.build()?;
+
+        // Set window icon from embedded bytes to ensure it's always available.
+        #[cfg(not(target_os = "macos"))]
+        {
+            let icon = tauri::image::Image::from_bytes(include_bytes!("../assets/icon.png"))
+                .ok()
+                .or_else(|| app.default_window_icon().cloned());
+            if let Some(icon) = icon {
+                if let Err(e) = window.set_icon(icon) {
+                    tracing::warn!("Failed to set window icon: {}", e);
+                }
+            }
+        }
 
         let app_state_lock = app.state::<Arc<tokio::sync::Mutex<crate::state::AppState>>>();
 
