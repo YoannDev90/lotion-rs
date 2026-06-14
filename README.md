@@ -27,11 +27,13 @@ The original Lotion solved this brilliantly using Electron. But Electron carries
 - A large memory footprint
 - No memory-safe systems layer
 
+## Installation
+
+### Oneline command
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/YoannDev90/lotion-rs/master/install.sh | bash
 ```
-
-## Installation
 
 ### Download Pre-built Packages
 
